@@ -1,0 +1,72 @@
+#!/bin/sh
+{% include 'header.j2' %}
+
+# too soon for logger, this line never appears in the log, bummer
+logger -t sng "BEGIN PRESEED CHOOSER COMMAND"
+
+logger -t sng "SPICE ${spicelevel}"
+
+echo "preseed_partman_start.cfg"
+logger -t sng "CHOSE preseed_partman_start.cfg"
+
+echo "preseed_spice_${spicelevel}.cfg"
+logger -t sng "CHOSE preseed_spice_${spicelevel}.cfg"
+
+raid=true
+
+# TODO: nvm "disks" like the UC25 do not show up yet
+# need to load mmc-modules earlier... or move the chooser around...
+# until then dcount=0 on these small devices :-/
+dtype=$(list-devices disk | grep -e 'da$' | cut -f3 -d/ | head -c 1)
+dcount=$(list-devices disk | grep -e 'da$' -e 'db$' | wc -l)
+
+if [ $dcount -le 1 ]; then
+	raid=false
+else
+	for disk in $(list-devices disk | grep -e 'da$' -e 'db$' | cut -f3 -d/); do
+		size=$(cat /sys/block/${disk}/size)
+		# TODO: compare sizes of disks and check within 5% diff for RAID
+		# FreePBX 60 single disk size is 250069680 (120GB)
+		# in lab, using a thumb drive at 16GB, and that appears as a disk
+		if [ $size -lt 213456789 ]; then
+			raid=false
+		fi
+	done
+fi
+
+if $raid; then
+	echo "preseed_partman_raid.cfg"
+	logger -t sng "CHOSE preseed_partman_raid.cfg"
+	if [ "$dtype" = "v" ]; then
+		echo "preseed_partman_raid_disk_v.cfg"
+		logger -t sng "CHOSE preseed_partman_raid_disk_v.cfg"
+	elif [ "$dtype" = "x" ]; then
+		echo "preseed_partman_raid_disk_xv.cfg"
+		logger -t sng "CHOSE preseed_partman_raid_disk_xv.cfg"
+	else
+		echo "preseed_partman_raid_disk_s.cfg"
+		logger -t sng "CHOSE preseed_partman_raid_disk_s.cfg"
+	fi
+	echo "preseed_partman_recipe_raid_${spicelevel}.cfg"
+	logger -t sng "CHOSE preseed_partman_recipe_raid_${spicelevel}.cfg"
+else
+	echo "preseed_partman_nonraid.cfg"
+	logger -t sng "CHOSE preseed_partman_nonraid.cfg"
+	if [ "$dtype" = "v" ]; then
+		echo "preseed_partman_nonraid_disk_v.cfg"
+		logger -t sng "CHOSE preseed_partman_nonraid_disk_v.cfg"
+	elif [ "$dtype" = "x" ]; then
+		echo "preseed_partman_nonraid_disk_xv.cfg"
+		logger -t sng "CHOSE preseed_partman_nonraid_disk_xv.cfg"
+	else
+		echo "preseed_partman_nonraid_disk_s.cfg"
+		logger -t sng "CHOSE preseed_partman_nonraid_disk_s.cfg"
+	fi
+	echo "preseed_partman_recipe_nonraid_${spicelevel}.cfg"
+	logger -t sng "CHOSE preseed_partman_recipe_nonraid_${spicelevel}.cfg"
+fi
+	
+echo "preseed_partman_finish.cfg"
+logger -t sng "CHOSE preseed_partman_finish.cfg"
+
+logger -t sng "END PRESEED CHOOSER COMMAND"

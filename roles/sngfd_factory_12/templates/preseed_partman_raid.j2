@@ -1,0 +1,8 @@
+{% include 'header.j2' %}
+
+d-i partman-auto/method string raid
+
+# RAID continued. (Some redundancies TODO cleaning them.)
+d-i partman-md/confirm boolean {{ bool_automatic|lower }}
+d-i partman-md/confirm_nooverwrite boolean {{ bool_automatic|lower }}
+

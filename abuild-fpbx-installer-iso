@@ -1,0 +1,44 @@
+#!/usr/bin/bash
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# abuild-fpbx-installer-iso
+#
+# Copyright (C) 2024-2025, Sangoma US Inc.
+
+usage() {
+	echo "
+Usage: $0 -i debian_input.iso
+
+Example: $0 -i /path/to/debian-12.8.0-amd64-netinst.iso
+
+You can change more options by setting Ansible variables on a per host or group basis.
+This shell script is a simple wrapper around ansible-playbook to run on your localhost.
+Please see README.md for more information.
+" 1>&2
+	exit 1
+}
+
+while getopts ":i:" opt; do
+	case "${opt}" in
+		i)
+			fn_iso_input=${OPTARG}
+			;;
+		*)
+			usage
+			;;
+	esac
+done
+shift $((OPTIND-1))
+
+if [ -z "${fn_iso_input}" ]; then
+	usage
+fi
+
+ansible-playbook \
+	--inventory localhost, \
+	--connection=local \
+	--extra-vars "fn_iso_input=${fn_iso_input}" \
+	default-playbook.yml
+

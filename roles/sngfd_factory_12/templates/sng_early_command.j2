@@ -1,0 +1,94 @@
+#!/bin/sh
+{% include 'header.j2' %}
+
+logger -t sng "BEGIN EARLY COMMAND"
+
+# need more entropy
+haveged 2>/dev/null
+
+# get previous UEFI out of the way
+# and don't trash the thumb drive
+umount /media || true
+
+{% if item.passbytes|int > 0 %}
+
+# set up password splashing command to run at end of install
+cat << EOFF > /usr/lib/finish-install.d/09sngsplashpass
+#!/bin/sh
+{% include 'header.j2' %}
+
+set -e
+. /usr/share/debconf/confmodule
+debconf-loadtemplate --merge sngsplashpass /run/sngsplashpass.template
+. /run/sngsplashpass
+EOFF
+
+cat << EOFMNOROOT > /run/sngsplashpass.template
+Template: sngsplashpass/subst
+Type: note
+Description: Please write down the passwords
+ You should write these down in safe places if you want to login later.
+ .
+ {{ str_whoami }}: \${newpassuser}
+ .
+ Did you write down the unique system passwords ? Take a picture ?
+ .
+ Or, if you want to change the passwords right now in the 2nd console:
+ .
+ 1. Press CTRL+ALT+F2  (TIP: get back this 1st console with CTRL+ALT+F1)
+ .
+ 2. Type: chroot /target
+ .
+ 3. passwd {{ str_whoami }}
+ .
+ 4. CTRL+ALT+F1  (to get back to this 1st console and complete install)
+EOFMNOROOT
+
+cat << EOFS > /run/sngsplashpass
+#!/bin/sh
+{% include 'header.j2' %}
+
+set -e
+
+# generate the passwords and splash them with some buttons
+
+# TODO: try /target/bin/shuf -n 4 /etc/dictionaries-common/words | tr "\'\n" "-"
+newpassroot=\$(/target/bin/openssl rand -base64 {{ item.passbytes }} | tr 'O01Il/' '*?#@:-')
+newpassuser=\$(/target/bin/openssl rand -base64 {{ item.passbytes }} | tr 'O01Il/' '*?#@:-')
+/bin/in-target su -s /bin/sh -c "echo root:\$newpassroot | chpasswd"
+/bin/in-target su -s /bin/sh -c "echo {{ str_whoami }}:\$newpassuser | chpasswd"
+
+db_capb backup
+db_get partman-crypto/passphrase
+db_subst sngsplashpass/subst newpassroot "\$newpassroot"
+db_subst sngsplashpass/subst newpassuser "\$newpassuser"
+db_subst sngsplashpass/subst newpassdisk "\$RET"
+db_input critical sngsplashpass/subst || true
+if ! db_go ; then
+	# abort
+	db_progress STOP
+	exit 10
+fi
+EOFS
+
+cat << EOFH > /run/sngdiskpass
+#!/bin/sh
+{% include 'header.j2' %}
+
+set -e
+. /usr/share/debconf/confmodule
+logger -t sng sngdiskpass
+newpassdisk=\$(haveged -n {{ item.passbytes }} -f - 2>/dev/null | base64 | tr 'O01Il/' '*?#@:-')
+# TODO
+db_set partman-crypto/passphrase "\$newpassdisk"
+db_set partman-crypto/passphrase-again "\$newpassdisk"
+EOFH
+
+chmod 0444 /run/sngsplashpass.template
+chmod 0555 /usr/lib/finish-install.d/09sngsplashpass
+chmod 0555 /run/sngsplashpass
+chmod 0555 /run/sngdiskpass
+
+{% endif %}
+
+logger -t sng "END EARLY COMMAND"

@@ -1,0 +1,418 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/output.yml
+
+- name: Remove old file hashes from md5sum.txt
+  ansible.builtin.lineinfile:
+    path: "{{ dextract.path }}/md5sum.txt"
+    regexp: "{{ item | regex_escape() }}$"
+    state: absent
+  loop:
+    - "./isolinux/menu.cfg"
+    - "./isolinux/splash.png"
+    - "./boot/grub/grub.cfg"
+    - "./boot/grub/theme/1"
+    - "./.disk/info"
+    - "./README.txt"
+
+- name: Register new hashes.
+  ansible.builtin.stat:
+    path: "{{ item.in|quote }}"
+    checksum_algorithm: md5
+  register: newhashes
+  loop:
+    - { in: "{{ dextract.path }}/diskinfo",   out: ".disk/info" }
+    - { in: "{{ dextract.path }}/grubtheme1", out: "boot/grub/theme/1" }
+    - { in: "{{ disolinux.path }}/menu.cfg",    out: "isolinux/menu.cfg" }
+    - { in: "{{ disolinux.path }}/splash.png",  out: "isolinux/splash.png" }
+    - { in: "{{ dtmp.path }}/README.txt",     out: "README.txt" }
+    - { in: "{{ dtmp.path }}/WARNING.txt",    out: "WARNING.txt" }
+    - { in: "{{ dtmp.path }}/EULA.txt",       out: "EULA.txt" }
+    - { in: "{{ dtmp.path }}/grub.cfg",     out: "boot/grub/grub.cfg" }
+    - { in: "{{ dtmp.path }}/preseed.cfg",  out: "preseed.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_pub.cfg",    out: "preseed_spice_pub.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_oso.cfg",    out: "preseed_spice_oso.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_fog.cfg",    out: "preseed_spice_fog.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_upg.cfg",    out: "preseed_spice_upg.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_int.cfg",    out: "preseed_spice_int.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_start.cfg",    out: "preseed_partman_start.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_finish.cfg",   out: "preseed_partman_finish.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_raid.cfg",       out: "preseed_partman_raid.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_nonraid.cfg",    out: "preseed_partman_nonraid.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_crypto.cfg",     out: "preseed_partman_crypto.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_s.cfg",    out: "preseed_partman_raid_disk_s.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_v.cfg",    out: "preseed_partman_raid_disk_v.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_xv.cfg",   out: "preseed_partman_raid_disk_xv.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_s.cfg",   out: "preseed_partman_nonraid_disk_s.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_v.cfg",   out: "preseed_partman_nonraid_disk_v.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_xv.cfg",  out: "preseed_partman_nonraid_disk_xv.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_pub.cfg",    out: "preseed_partman_recipe_raid_pub.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_pub.cfg", out: "preseed_partman_recipe_nonraid_pub.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_oso.cfg",    out: "preseed_partman_recipe_raid_oso.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_oso.cfg", out: "preseed_partman_recipe_nonraid_oso.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_fog.cfg",    out: "preseed_partman_recipe_raid_fog.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_fog.cfg", out: "preseed_partman_recipe_nonraid_fog.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_upg.cfg",    out: "preseed_partman_recipe_raid_upg.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg", out: "preseed_partman_recipe_nonraid_upg.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int.cfg",    out: "preseed_partman_recipe_raid_int.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int.cfg", out: "preseed_partman_recipe_nonraid_int.cfg" }
+    - { in: "{{ dcdrom.path }}/sng_boot_all_command",             out: "cdrom/sng_boot_all_command" }
+    - { in: "{{ dcdrom.path }}/sng_preseed_chooser_all_command",  out: "cdrom/sng_preseed_chooser_all_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_partman_all_command",    out: "cdrom/sng_early_partman_all_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_pub_command",    out: "cdrom/sng_early_pub_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_oso_command",    out: "cdrom/sng_early_oso_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_fog_command",    out: "cdrom/sng_early_fog_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_upg_command",    out: "cdrom/sng_early_upg_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_int_command",    out: "cdrom/sng_early_int_command" }
+    - { in: "{{ dcdrom.path }}/sng_late_all_command",         out: "cdrom/sng_late_all_command" }
+    - { in: "{{ dcdrom.path }}/sangoma-wallpaper-for-grub.png",   out: "cdrom/sangoma-wallpaper-for-grub.png" }
+    - { in: "{{ dcdrom.path }}/copy_to_boot_efi2.j2", out: "cdrom/copy_to_boot_efi2.j2" }
+
+- name: Add new hashes to md5sum.txt
+  ansible.builtin.lineinfile:
+    path: "{{ dextract.path }}/md5sum.txt"
+    line: "{{ item.stat.checksum }} {{ item.stat.path }}"
+  loop: "{{ newhashes.results }}"
+
+- name: Shuffling around file names in md5sum.txt
+  ansible.builtin.lineinfile:
+    path: "{{ dextract.path }}/md5sum.txt"
+    regexp: '^(.*) ({{ item.in | regex_escape() }})$'
+    line: '\1  ./{{ item.out }}'
+    backrefs: true
+  loop:
+    - { in: "{{ dextract.path }}/diskinfo",   out: ".disk/info" }
+    - { in: "{{ dextract.path }}/grubtheme1", out: "boot/grub/theme/1" }
+    - { in: "{{ disolinux.path }}/menu.cfg",    out: "isolinux/menu.cfg" }
+    - { in: "{{ disolinux.path }}/splash.png",  out: "isolinux/splash.png" }
+    - { in: "{{ dtmp.path }}/README.txt",     out: "README.txt" }
+    - { in: "{{ dtmp.path }}/WARNING.txt",    out: "WARNING.txt" }
+    - { in: "{{ dtmp.path }}/EULA.txt",       out: "EULA.txt" }
+    - { in: "{{ dtmp.path }}/grub.cfg",     out: "boot/grub/grub.cfg" }
+    - { in: "{{ dtmp.path }}/preseed.cfg",  out: "preseed.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_pub.cfg",    out: "preseed_spice_pub.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_oso.cfg",    out: "preseed_spice_oso.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_fog.cfg",    out: "preseed_spice_fog.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_upg.cfg",    out: "preseed_spice_upg.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_spice_int.cfg",    out: "preseed_spice_int.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_start.cfg",    out: "preseed_partman_start.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_finish.cfg",   out: "preseed_partman_finish.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_raid.cfg",       out: "preseed_partman_raid.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_nonraid.cfg",    out: "preseed_partman_nonraid.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_crypto.cfg",     out: "preseed_partman_crypto.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_s.cfg",    out: "preseed_partman_raid_disk_s.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_v.cfg",    out: "preseed_partman_raid_disk_v.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_xv.cfg",   out: "preseed_partman_raid_disk_xv.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_s.cfg",   out: "preseed_partman_nonraid_disk_s.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_v.cfg",   out: "preseed_partman_nonraid_disk_v.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_xv.cfg",  out: "preseed_partman_nonraid_disk_xv.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_pub.cfg",    out: "preseed_partman_recipe_raid_pub.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_pub.cfg", out: "preseed_partman_recipe_nonraid_pub.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_oso.cfg",    out: "preseed_partman_recipe_raid_oso.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_oso.cfg", out: "preseed_partman_recipe_nonraid_oso.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_fog.cfg",    out: "preseed_partman_recipe_raid_fog.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_fog.cfg", out: "preseed_partman_recipe_nonraid_fog.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_upg.cfg",    out: "preseed_partman_recipe_raid_upg.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg", out: "preseed_partman_recipe_nonraid_upg.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int.cfg",    out: "preseed_partman_recipe_raid_int.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int.cfg", out: "preseed_partman_recipe_nonraid_int.cfg" }
+    - { in: "{{ dcdrom.path }}/sng_boot_all_command",             out: "cdrom/sng_boot_all_command" }
+    - { in: "{{ dcdrom.path }}/sng_preseed_chooser_all_command",  out: "cdrom/sng_preseed_chooser_all_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_partman_all_command",    out: "cdrom/sng_early_partman_all_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_pub_command",    out: "cdrom/sng_early_pub_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_oso_command",    out: "cdrom/sng_early_oso_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_fog_command",    out: "cdrom/sng_early_fog_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_upg_command",    out: "cdrom/sng_early_upg_command" }
+    - { in: "{{ dcdrom.path }}/sng_early_int_command",    out: "cdrom/sng_early_int_command" }
+    - { in: "{{ dcdrom.path }}/sng_late_all_command",         out: "cdrom/sng_late_all_command" }
+    - { in: "{{ dcdrom.path }}/sangoma-wallpaper-for-grub.png",   out: "cdrom/sangoma-wallpaper-for-grub.png" }
+    - { in: "{{ dcdrom.path }}/copy_to_boot_efi2.j2", out: "cdrom/copy_to_boot_efi2.j2" }
+
+- name: Run xorriso to generate ISO output.
+  ignore_errors: true
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/xorriso
+      - -indev
+      -   "{{ fn_iso_input }}"
+      - -outdev
+      -   "{{ fn_iso_output }}"
+      - -map
+      -   "{{ dextract.path }}/md5sum.txt"
+      -   "md5sum.txt"
+      - -map
+      -   "{{ dextract.path }}/diskinfo"
+      -   ".disk/info"
+      - -map
+      -   "{{ dextract.path }}/grubtheme1"
+      -   "boot/grub/theme/1"
+      - -map
+      -   "{{ dtmp.path }}/README.txt"
+      -   "README.txt"
+      - -map
+      -   "{{ dtmp.path }}/WARNING.txt"
+      -   "WARNING.txt"
+      - -map
+      -   "{{ dtmp.path }}/EULA.txt"
+      -   "EULA.txt"
+      - -map
+      -   "{{ disolinux.path }}/menu.cfg"
+      -   "isolinux/menu.cfg"
+      - -map
+      -   "{{ disolinux.path }}/splash.png"
+      -   "isolinux/splash.png"
+      - -map
+      -   "{{ dtmp.path }}/grub.cfg"
+      -   "boot/grub/grub.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed.cfg"
+      -   "preseed.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_spice_pub.cfg"
+      -   "preseed_spice_pub.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_spice_oso.cfg"
+      -   "preseed_spice_oso.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_spice_fog.cfg"
+      -   "preseed_spice_fog.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_spice_upg.cfg"
+      -   "preseed_spice_upg.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_spice_int.cfg"
+      -   "preseed_spice_int.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_start.cfg"
+      -   "preseed_partman_start.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_finish.cfg"
+      -   "preseed_partman_finish.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_raid.cfg"
+      -   "preseed_partman_raid.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_nonraid.cfg"
+      -   "preseed_partman_nonraid.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_crypto.cfg"
+      -   "preseed_partman_crypto.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_raid_disk_s.cfg"
+      -   "preseed_partman_raid_disk_s.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_raid_disk_v.cfg"
+      -   "preseed_partman_raid_disk_v.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_raid_disk_xv.cfg"
+      -   "preseed_partman_raid_disk_xv.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_nonraid_disk_s.cfg"
+      -   "preseed_partman_nonraid_disk_s.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_nonraid_disk_v.cfg"
+      -   "preseed_partman_nonraid_disk_v.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_nonraid_disk_xv.cfg"
+      -   "preseed_partman_nonraid_disk_xv.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_pub.cfg"
+      -   "preseed_partman_recipe_raid_pub.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_pub.cfg"
+      -   "preseed_partman_recipe_nonraid_pub.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_oso.cfg"
+      -   "preseed_partman_recipe_raid_oso.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_oso.cfg"
+      -   "preseed_partman_recipe_nonraid_oso.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_fog.cfg"
+      -   "preseed_partman_recipe_raid_fog.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_fog.cfg"
+      -   "preseed_partman_recipe_nonraid_fog.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_upg.cfg"
+      -   "preseed_partman_recipe_raid_upg.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg"
+      -   "preseed_partman_recipe_nonraid_upg.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_int.cfg"
+      -   "preseed_partman_recipe_raid_int.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int.cfg"
+      -   "preseed_partman_recipe_nonraid_int.cfg"
+      - -map
+      -   "{{ dcdrom.path }}/sng_boot_all_command"
+      -   "sng_boot_all_command"
+      - -map
+      -   "{{ dcdrom.path }}/sng_preseed_chooser_all_command"
+      -   "sng_preseed_chooser_all_command"
+      - -map
+      -   "{{ dcdrom.path }}/sng_early_partman_all_command"
+      -   "sng_early_partman_all_command"
+      - -map
+      -   "{{ dcdrom.path }}/sng_early_pub_command"
+      -   "sng_early_pub_command"
+      - -map
+      -   "{{ dcdrom.path }}/sng_early_oso_command"
+      -   "sng_early_oso_command"
+      - -map
+      -   "{{ dcdrom.path }}/sng_early_fog_command"
+      -   "sng_early_fog_command"
+      - -map
+      -   "{{ dcdrom.path }}/sng_early_upg_command"
+      -   "sng_early_upg_command"
+      - -map
+      -   "{{ dcdrom.path }}/sng_early_int_command"
+      -   "sng_early_int_command"
+      - -map
+      -   "{{ dcdrom.path }}/sng_late_all_command"
+      -   "sng_late_all_command"
+      - -map
+      -   "{{ dcdrom.path }}/sangoma-wallpaper-for-grub.png"
+      -   "sangoma-wallpaper-for-grub.png"
+      - -map
+      -   "{{ dcdrom.path }}/copy_to_boot_efi2.j2"
+      -   "copy_to_boot_efi2.j2"
+      - -rm_r
+      -   /boot/grub/theme/1-1
+      -   /boot/grub/theme/1-1-1
+      -   /boot/grub/theme/1-2
+      -   /boot/grub/theme/1-2-1
+      -   /boot/grub/theme/dark-1
+      -   /boot/grub/theme/dark-1-1
+      -   /boot/grub/theme/dark-1-1-1
+      -   /boot/grub/theme/dark-1-2
+      -   /boot/grub/theme/dark-1-2-1
+      -   /css/debinstall.css
+      -   /css/debinstall-print.css
+      -   /doc
+      -   /isolinux/f1.txt
+      -   /isolinux/f2.txt
+      -   /isolinux/f9.txt
+      -   /isolinux/f10.txt
+      -   /pics
+      -   /pool/main/g/gnome*
+      -   /pool/main/g/gtk*
+      -   /pool/main/k/kde*
+      -   /pool/main/m/mate*
+      -   /README.html
+      -   /README.mirrors.html
+      -   /README.mirrors.txt
+      - --
+      - -chown
+      -   "root"
+      -   "./md5sum.txt"
+      -   "./.disk/info"
+      -   "./boot/grub/theme/1"
+      -   "./README.txt"
+      -   "./WARNING.txt"
+      -   "./EULA.txt"
+      -   "./preseed.cfg"
+      -   "./isolinux/menu.cfg"
+      -   "./isolinux/splash.png"
+      -   "./boot/grub/grub.cfg"
+      -   "./copy_to_boot_efi2.j2"
+      -   "./preseed_partman_start.cfg"
+      -   "./preseed_partman_finish.cfg"
+      -   "./preseed_partman_raid.cfg"
+      -   "./preseed_partman_nonraid.cfg"
+      -   "./preseed_partman_crypto.cfg"
+      -   "./preseed_partman_raid_disk_s.cfg"
+      -   "./preseed_partman_raid_disk_v.cfg"
+      -   "./preseed_partman_raid_disk_xv.cfg"
+      -   "./preseed_partman_nonraid_disk_s.cfg"
+      -   "./preseed_partman_nonraid_disk_v.cfg"
+      -   "./preseed_partman_nonraid_disk_xv.cfg"
+      -   "./preseed_partman_recipe_raid_pub.cfg"
+      -   "./preseed_partman_recipe_nonraid_pub.cfg"
+      -   "./preseed_partman_recipe_raid_oso.cfg"
+      -   "./preseed_partman_recipe_nonraid_oso.cfg"
+      -   "./preseed_partman_recipe_raid_fog.cfg"
+      -   "./preseed_partman_recipe_nonraid_fog.cfg"
+      -   "./preseed_partman_recipe_raid_upg.cfg"
+      -   "./preseed_partman_recipe_nonraid_upg.cfg"
+      -   "./preseed_partman_recipe_raid_int.cfg"
+      -   "./preseed_partman_recipe_nonraid_int.cfg"
+      -   "./sng_boot_all_command"
+      -   "./sng_early_partman_all_command"
+      -   "./sng_preseed_chooser_all_command"
+      -   "./sng_early_pub_command"
+      -   "./sng_early_oso_command"
+      -   "./sng_early_fog_command"
+      -   "./sng_early_upg_command"
+      -   "./sng_early_int_command"
+      -   "./sng_late_all_command"
+      -   "./sangoma-wallpaper-for-grub.png"
+      - --
+      - -chgrp
+      -   "root"
+      -   "./md5sum.txt"
+      -   "./.disk/info"
+      -   "./boot/grub/theme/1"
+      -   "./README.txt"
+      -   "./WARNING.txt"
+      -   "./EULA.txt"
+      -   "./preseed.cfg"
+      -   "./isolinux/menu.cfg"
+      -   "./isolinux/splash.png"
+      -   "./boot/grub/grub.cfg"
+      -   "./copy_to_boot_efi2.j2"
+      -   "./preseed_partman_start.cfg"
+      -   "./preseed_partman_finish.cfg"
+      -   "./preseed_partman_raid.cfg"
+      -   "./preseed_partman_nonraid.cfg"
+      -   "./preseed_partman_crypto.cfg"
+      -   "./preseed_partman_raid_disk_s.cfg"
+      -   "./preseed_partman_raid_disk_v.cfg"
+      -   "./preseed_partman_raid_disk_xv.cfg"
+      -   "./preseed_partman_nonraid_disk_s.cfg"
+      -   "./preseed_partman_nonraid_disk_v.cfg"
+      -   "./preseed_partman_nonraid_disk_xv.cfg"
+      -   "./preseed_partman_recipe_raid_pub.cfg"
+      -   "./preseed_partman_recipe_nonraid_pub.cfg"
+      -   "./preseed_partman_recipe_raid_oso.cfg"
+      -   "./preseed_partman_recipe_nonraid_oso.cfg"
+      -   "./preseed_partman_recipe_raid_fog.cfg"
+      -   "./preseed_partman_recipe_nonraid_fog.cfg"
+      -   "./preseed_partman_recipe_raid_upg.cfg"
+      -   "./preseed_partman_recipe_nonraid_upg.cfg"
+      -   "./preseed_partman_recipe_raid_int.cfg"
+      -   "./preseed_partman_recipe_nonraid_int.cfg"
+      -   "./sng_boot_all_command"
+      -   "./sng_early_partman_all_command"
+      -   "./sng_preseed_chooser_all_command"
+      -   "./sng_early_pub_command"
+      -   "./sng_early_oso_command"
+      -   "./sng_early_fog_command"
+      -   "./sng_early_upg_command"
+      -   "./sng_early_int_command"
+      -   "./sng_late_all_command"
+      -   "./sangoma-wallpaper-for-grub.png"
+      - --
+      - -volid
+      -   "{{ str_our_short_cap_name }}_{{ str_script_version_underscore }}_{{ str_spice }}{{ str_diy }}"
+      - -md5
+      -   all
+      - -boot_image
+      -   any
+      -   replay
+      - -padding
+      -   included
+      - -compliance
+      -   no_emul_toc
+
+- name: Output ISO hash generation.
+  ansible.builtin.stat:
+    path: "{{ fn_iso_output }}"
+  register: sha1
+
+- name: Output ISO hash display.
+  ansible.builtin.debug:
+    msg: "{{ sha1.stat.checksum }}" 

@@ -1,0 +1,201 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: defaults/main/defaults.yml
+
+# TODO: There are a lot of copy/pasta holdovers in this file
+#       from the previous shell script version (in the legacy folder).
+
+# FreePBX version
+str_freepbx_version: "17"
+
+# Our name
+str_vendor: "Sangoma"
+str_vendor_url: "https://www.sangoma.com/"
+str_our_full_name: "Sangoma FreePBX Distro"
+str_our_short_cap_name: "SNGFD"
+
+# Support Debian 12 bookworm
+str_deb_codename: "bookworm"
+str_deb_version: "12"
+
+# Script versioning
+str_script_minor: "1.2-BETA"
+str_script_build: "2025-02-06.1"
+
+# Computed values
+str_script_codename: "{{ str_deb_codename }}"
+str_script_major: "{{ str_deb_version }}"
+str_script_version: "{{ str_script_major }}.{{ str_script_minor }}"
+str_script_version_underscore: "{{ str_script_version | regex_replace('\\.|-', '_') }}"
+str_script_version_hyphen: "{{ str_script_version | regex_replace('\\.', '-') }}"
+str_script_name: "sngfd_factory_12"
+str_script_sha512sum: "TBD"
+
+# Computed first part of the name of the output iso file
+str_iso_out_base: "{{ str_our_short_cap_name }}-{{ str_script_version_hyphen }}"
+
+# Now some variables that might get overwritten by command line options...
+
+# Our DAHDI build is sticky about kernel versions
+# works with Debian 12.7
+#str_locked_kernel: "6.1.0-25-amd64"
+# worked with Debian 12.8 at one time
+#str_locked_kernel: "6.1.0-27-amd64"
+# works with Debian 12.8 and 12.9
+#str_locked_kernel: "6.1.0-26-amd64"
+# use whatever the input ISO supplies
+str_locked_kernel: "iso"
+# float to current Debian eg. OSO and FOG spices do this automatically
+# and whatever you set str_locked_kernel to on OSO or FOG install
+# will have NO EFFECT on locking the kernel
+# str_locked_kernel: ""
+
+# Hostname of the installed system varies by version
+str_host_name: "sangoma-freepbx-{{ str_script_version_hyphen|lower }}"
+#str_timezone: "US/Mountain"
+str_timezone: "UTC"
+
+# Script was developed for internal use, primarily fast PXE boot,
+# so make it safer for the public ISOs.
+str_spice: "ALL"
+
+# If anything but these are changed:
+# a) input ISO (-i)
+# b) spice level (-s)
+# c) netboot initrd (-n)
+# d) archives (-a)
+# ...then we add the word DIY to the ISO output name
+bool_diy: false
+str_diy: ""
+
+# Warehouse ships out DAHDI compatible appliances
+# TODO: make this more flexible based on spice levels eg. OSO.
+str_sng_opts: "--dahdi"
+
+# You can change your username
+str_whoami: "sangoma"
+
+# GRUB wallpaper (if not in this directory, then supply path to it)
+fn_wallpaper: "sangoma-tango-tiny-kit-background-for-grub-copyright-2025.png"
+# no wallpaper :(
+#fn_wallpaper: ""
+
+# Special UEFI RAID sync script to keep booting from primary & secondary.
+fn_efi_raid_sync: "copy_to_boot_efi2.j2"
+
+# Disabling networking is good for testing or clean room installs,
+# but you won't get very far until network is connected,
+# until we include more packages in the ISO
+bool_networking: true
+
+# Proxy settings for caching packages on another machine on the LAN
+# on that machine, run:
+# $ apt-get install apt-cacher-ng
+# $ ufw allow tcp/3142  ; or whatever else you need to open firewall
+# ...this should greatly speed up non-DVD installs
+bool_proxying: false
+str_proxy_host: ""
+int_proxy_port: 3142
+
+# Pause before reboot when testing (good for reviewing in a shell)
+bool_pause_reboot: false
+
+# Start running the installer on first reboot via systemd oneshot service
+bool_one_shot: true
+
+# Percent of the Volume Group to fill up with Logical Volumes
+# set to 100 to fill the VG ie. no user adjustable LV changes later
+# eg. on 100G disk, with int_lvm_guided_size=90, and int_mb_ssd_wear=1,
+# then partman will fill 90G, leaving almost 9G open (some room for boot partition)
+# MINIMUM DISK SIZE IS APPX 15G
+# BUT if you specify int_lvm_guided_size=50 on 20G disk that WILL NOT WORK
+# (try int_lvm_guided_size=90 on a 20G disk :-)
+int_lvm_guided_size: 50
+
+# MegaBytes for SSD wear (used in partman sngssdwear - 3rd disk partition)
+# this allows Over Provisioning of the disk, which will improve disk lifetime
+# set this to 1 to fill up 99.9% of disk (not recommended but here you go ;-)
+# NOTE this works on RAID, and on single disks if GPT partitioned,
+# but some (most?) VMs do not use GPT partitioning on their virtual disks.
+# TODO: determine if this is better at the end of the disk not in 3rd part
+# Minimum: 1
+int_mb_ssd_wear: 25025
+
+# MegaBytes for swap
+# minimium swap amount
+int_mb_swap_min: 100
+# maximum (will be smaller on disks under 100G)
+int_mb_swap_max: 4096
+# warehouse starting in 2025
+int_mb_swap_warehouse: 8192
+# upgrades of existing customer equipment
+int_mb_swap_existing: 4096
+
+# If testing step-by-step, then set bool_automatic to false
+bool_automatic: true
+
+# bool_fully_automated_installation controls whether we bury installer
+# in GRUB/PXELINUX menu or not, allowing perhaps too easy disk wiping;
+# probably set this to true for pxeboot in warehouse, and maybe internal USB,
+# but set to false for distributing on thumb drives elsewhere (especially publicly).
+bool_fully_automated_installation: false
+
+# New autogenerated passwords will be this many bytes.
+# If 0, then no pseudo-random passwords will be generated.
+int_passbytes: 12
+int_passbytes_pub: "{{ int_passbytes }}"
+int_passbytes_oso: "{{ int_passbytes }}"
+int_passbytes_fog: "{{ int_passbytes }}"
+int_passbytes_upg: -1
+int_passbytes_int: 0
+
+# Hopefully we will stop using these old passwords soon.
+str_old_root_pass: "sangoma"
+str_old_user_pass: "SangomaDefaultPassword"
+
+# Set to true to lock the root user during the ISO installation.
+bool_lock_root_early: true
+# Set to true to lock the root user during the sng-eol script run (before shipping.)
+bool_lock_root_eol: true
+
+# Used in the packages list (copied from FreePBX shell installer).
+str_php_version: 8.2
+
+# Sangoma deb repo mirror priority (copied from the shell installer).
+int_mirror_priority: 600
+
+# If bool_embed_apt_key: false then no fpbx repo setup/preloading will
+# occur during ISO installation -- we will wait for the script.
+# If bool_networking: false then bool_embed_apt_key has no effect.
+bool_embed_apt_key: false
+
+# Locate of deb package archives from another working FreePBX17
+# that you rysnc'd to this installation box and want to embed in the ISO.
+# eg. rsync -avz goodpbx17:/var/cache/apt/archives .
+# no default
+dir_archives: ""
+# use local directory
+#dir_archives: "archives"
+# use current machine as the source
+#dir_archives: "/var/cache/apt/archives"
+
+# Sensible default
+fn_netboot_initrd: ""
+#fn_netboot_initrd: "{{ str_script_codename }}-netboot-initrd.gz"
+
+# Must be supplied on command line
+#fn_iso_input: "debian-12.8.0-amd64-netinst.iso"
+
+# Used to depend on DIY and SPICE... back in the legacy shell days...
+fn_iso_output: "{{ str_iso_out_base }}.iso"
+
+# Ready for the MITER numbering
+cpeid: "cpe:2.3:o:{{ str_vendor }}:{{ str_our_short_cap_name }}:{{ str_freepbx_version }}:{{ str_script_version }}:{{ str_spice }}:*:*:*:*:*"
+
+# New items only in the ansible version...
+
+# CDROM directory name.
+dn_cdrom: "cdrom-{{ str_our_short_cap_name|lower }}-{{ str_script_version_hyphen|lower }}"
+

@@ -1,0 +1,3 @@
+WARNING: This ISO might AUTOMATICALLY wipe ALL your hard disks when you boot with it!!! See the preseed.cfg file for details.
+WARNING: This ISO might AUTOMATICALLY wipe ALL your hard disks when you boot with it!!! See the preseed.cfg file for details.
+WARNING: This ISO might AUTOMATICALLY wipe ALL your hard disks when you boot with it!!! See the preseed.cfg file for details.

@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/main.yml
+
+- name: Check for an existing output ISO with the same name.
+  ansible.builtin.stat:
+    path: "{{ fn_iso_output }}"
+  register: stat_iso_output
+
+- name: Confirm output ISO does not already exist.
+  ansible.builtin.fail:
+    msg: "Oops that output ISO already exists: '{{ fn_iso_output }}'"
+  when: stat_iso_output.stat.exists
+
+- name: Make temporary directories.
+  ansible.builtin.include_tasks:
+    file: directories.yml
+
+- name: Extract from input ISO.
+  ansible.builtin.include_tasks:
+    file: extract.yml
+
+- name: Bootloader menus.
+  ansible.builtin.include_tasks:
+    file: bootloader.yml
+
+- name: Preseeds for automatically answering installation questions.
+  ansible.builtin.include_tasks:
+    file: preseeds.yml
+
+- name: Commands to run during preseed - boot, early, before partitioning, and late.
+  ansible.builtin.include_tasks:
+    file: commands.yml
+
+- name: Special helpers.
+  ansible.builtin.include_tasks:
+    file: helpers.yml
+
+- name: Output the new ISO.
+  ansible.builtin.include_tasks:
+    file: output.yml
+
+#- name: test
+#  ansible.builtin.debug:
+#    msg: "testing"
+

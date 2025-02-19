@@ -1,0 +1,48 @@
+{% include 'header.j2' %}
+
+#
+# Dynamic parts based on variables defined at beginning of the ISO generation script...
+#
+
+# This makes partman automatically partition without confirmation, provided
+# that you told it what to do using one of the methods above.
+d-i partman-partitioning/confirm_write_new_label boolean {{ bool_automatic|lower }}
+
+# If one of the disks that are going to be automatically partitioned
+# contains an old LVM configuration, the user will normally receive a
+# warning. This can be preseeded away...
+d-i partman-lvm/device_remove_lvm boolean {{ bool_automatic|lower }}
+
+# The same applies to pre-existing software RAID array:
+d-i partman-md/device_remove_md boolean {{ bool_automatic|lower }}
+
+# Keep cleaning the LVM parts out (for reinstalls)
+d-i partman-auto/purge_lvm_from_device boolean {{ bool_automatic|lower }}
+
+# Confirmation to write the LVM partitions.
+d-i partman-lvm/confirm boolean {{ bool_automatic|lower }}
+d-i partman-lvm/confirm_nooverwrite boolean {{ bool_automatic|lower }}
+
+# Optimal alignment is the default.
+d-i partman/alignment string optimal
+
+d-i partman-auto/method string regular
+d-i partman/choose_partition select Finish
+d-i partman/confirm boolean {{ bool_automatic|lower }}
+d-i partman/confirm_nooverwrite boolean {{ bool_automatic|lower }}
+
+# Yes we want to leave a little unmounted space on the physical disk.
+# This allows more SSD wear-leveling.
+d-i partman-basicmethods/method_only boolean false
+#d-i partman-basicfilesystems/no_mount_point boolean false
+
+# TODO: should LVM VG name be randomized on each install ?
+d-i partman-auto-lvm/new_vg_name string pbxvg0
+
+# On re-installs, a slight change in VG name.
+d-i partman-auto-lvm/new_vg_name_exists string pbxvg1
+
+# Allow local admins to grow LVs later on.
+# (We also explicitly reserve free space later in recipe.)
+# TODO: base this on disk size
+d-i partman-auto-lvm/guided_size string {{ int_lvm_guided_size }}%

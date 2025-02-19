@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/directories.yml
+
+- name: Prepare temporary directory.
+  ansible.builtin.tempfile:
+    suffix: ".{{ str_script_version_hyphen }}"
+    state: directory
+  register: dtmp
+
+- name: Prepare temporary cdrom directory.
+  ansible.builtin.file:
+    path: "{{ dtmp.path }}/{{ dn_cdrom }}"
+    state: directory
+  register: dcdrom
+
+- name: Prepare temporary isolinux directory.
+  ansible.builtin.file:
+    path: "{{ dtmp.path }}/isolinux"
+    state: directory
+  register: disolinux
+
+- name: Prepare temporary extraction directory.
+  ansible.builtin.file:
+    path: "{{ dtmp.path }}/extract"
+    state: directory
+  register: dextract

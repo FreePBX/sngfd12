@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/commands.yml
+
+- name: Several commands.
+  ansible.builtin.template:
+    src: sng_{{ item.stage }}_command.j2
+    dest: "{{ dcdrom.path }}/sng_{{ item.stage }}_{{ item.spice }}_command"
+    mode: "u+x"
+  loop:
+    - { stage: "boot",            spice: "all" }
+    - { stage: "preseed_chooser", spice: "all" }
+    - { stage: "early_partman",   spice: "all" }
+    - { stage: "early",           spice: "pub", passbytes: "{{ int_passbytes_pub }}" }
+    - { stage: "early",           spice: "oso", passbytes: "{{ int_passbytes_oso }}" }
+    - { stage: "early",           spice: "fog", passbytes: "{{ int_passbytes_fog }}" }
+    - { stage: "early",           spice: "upg", passbytes: "{{ int_passbytes_upg }}" }
+    - { stage: "early",           spice: "int", passbytes: "{{ int_passbytes_int }}" }
+    - { stage: "late",            spice: "all" }

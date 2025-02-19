@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/extract.yml
+
+- name: Extracting files.
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/xorriso
+      - -osirrox
+      -   "on"
+      - -indev
+      -   "{{ fn_iso_input }}"
+      - -extract
+      -   "{{ item.in }}"
+      -   "{{ item.out }}"
+  loop:
+    - { in: "md5sum.txt",                     out: "{{ dextract.path }}/md5sum.txt" }
+    - { in: "boot/grub/theme/1",              out: "{{ dextract.path }}/grubtheme1" }
+    - { in: ".disk/info",                     out: "{{ dextract.path }}/diskinfo" }
+    - { in: "pool/main/l/linux-signed-amd64", out: "{{ dextract.path }}/linux-signed-amd64" }
+
+- name: Make some of the extracted files writable.
+  ansible.builtin.file:
+    path: "{{ item.out }}"
+    state: touch
+    mode: "u+w"
+  loop:
+    - { in: "md5sum.txt",                     out: "{{ dextract.path }}/md5sum.txt" }
+    - { in: "boot/grub/theme/1",              out: "{{ dextract.path }}/grubtheme1" }
+    - { in: ".disk/info",                     out: "{{ dextract.path }}/diskinfo" }
+
+- name: Adjust the disk info.
+  ansible.builtin.lineinfile:
+    path: "{{ dextract.path }}/diskinfo"
+    regexp: '^Debian.*'
+    line: "{{ str_our_full_name }} installer {{ str_script_version }}"
+
+- name: Adjust GRUB menu to make mention of FreePBX in the title 1.
+  ansible.builtin.lineinfile:
+    path: "{{ dextract.path }}/grubtheme1"
+    regexp: '^title-text:.*'
+    line: 'title-text: "{{ str_our_full_name }}"'
+
+- name: Adjust GRUB menu to make mention of FreePBX in the title 2.
+  ansible.builtin.lineinfile:
+    path: "{{ dextract.path }}/grubtheme1"
+    regexp: '^(.*)Debian GNU/Linux(.*)$'
+    line: '\1{{ str_our_full_name }}\2'
+    backrefs: true
+
+- name: Grab extracted kernel version from ISO (if applicable).
+  when: str_locked_kernel == "iso"
+  ansible.builtin.shell:
+    cmd: ls "{{ dextract.path }}/linux-signed-amd64" | grep -v "linux-image-amd64" | grep -m 1 "linux-image" | cut -f1 -d'_' | sed 's/linux-image-//'
+  register: locked_kernel
+
+- name: Loose lock of the kernel (if applicable).
+  when: str_locked_kernel == "iso"
+  ansible.builtin.set_fact:
+    str_locked_kernel: "{{ locked_kernel.stdout }}"
+
+- name: Kernel we are locking to.
+  ansible.builtin.debug:
+    msg: "kernel {{ str_locked_kernel }}"

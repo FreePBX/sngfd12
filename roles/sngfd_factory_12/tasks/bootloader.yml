@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/bootloader.yml
+
+- name: BIOS ISOLINUX menu.
+  ansible.builtin.template:
+    src: bootloader_menu_isolinux.j2
+    dest: "{{ disolinux.path }}/menu.cfg"
+
+- name: UEFI GRUB menu.
+  ansible.builtin.template:
+    src: bootloader_menu_grub.j2
+    dest: "{{ dtmp.path }}/grub.cfg"
+
+- name: Wallpaper for every boot.
+  ansible.builtin.copy:
+    src: "{{ fn_wallpaper }}"
+    dest: "{{ dcdrom.path }}/sangoma-wallpaper-for-grub.png"
+
+- name: Wallpaper for initial install boot.
+  ansible.builtin.copy:
+    src: "{{ fn_wallpaper }}"
+    dest: "{{ disolinux.path }}/splash.png"

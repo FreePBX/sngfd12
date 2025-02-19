@@ -1,0 +1,14 @@
+{% include 'header.j2' %}
+
+# RAID on '{{ item.disk_type }}da' and '{{ item.disk_type }}db'.
+d-i partman-auto/disk string /dev/{{ item.disk_type }}da /dev/{{ item.disk_type }}db
+
+# GRUB specifics for RAID
+d-i grub-installer/bootdev string /dev/{{ item.disk_type }}da /dev/{{ item.disk_type }}db
+
+# RAID recipe.
+d-i partman-auto-raid/recipe string				\\
+	1 2 0 ext4 /boot /dev/{{ item.disk_type }}da2#/dev/{{ item.disk_type }}db2	\\
+	.							\\
+	1 2 0 lvm - /dev/{{ item.disk_type }}da4#/dev/{{ item.disk_type }}db4		\\
+	.

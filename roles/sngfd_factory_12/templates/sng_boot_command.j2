@@ -1,0 +1,8 @@
+#!/bin/sh
+{% include 'header.j2' %}
+
+logger -t sng "BEGIN BOOT COMMAND"
+# TODO: could parse additional GRUB command-line options here
+# but it happens so early there is not much useful we can do
+touch /tmp/in-the-boot-command.txt
+logger -t sng "END BOOT COMMAND"

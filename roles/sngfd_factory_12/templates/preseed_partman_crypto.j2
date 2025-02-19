@@ -1,0 +1,5 @@
+{% include 'header.j2' %}
+
+# TODO preseed the disk password
+d-i partman-auto/method string crypto
+d-i partman-auto-crypto/erase_disks boolean false

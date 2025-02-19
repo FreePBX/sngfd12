@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/helpers.yml
+
+- name: Copy over the JINJA2 template for EFI RAID failover support via GRUB hook.
+  ansible.builtin.copy:
+    src: copy_to_boot_efi2.j2
+    dest: "{{ dcdrom.path }}"
+
+- name: Get some static text files in place.
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ dtmp.path }}"
+  loop:
+    - README.txt
+    - WARNING.txt
+    - EULA.txt

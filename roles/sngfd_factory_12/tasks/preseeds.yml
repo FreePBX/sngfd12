@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/preseeds.yml
+
+- name: Initial preseed.cfg
+  ansible.builtin.template:
+    src: preseed.j2
+    dest: "{{ dtmp.path }}/preseed.cfg"
+
+- name: Spicy preseed_spice_....cfg
+  ansible.builtin.template:
+    src: preseed_spice.j2
+    dest: "{{ dtmp.path }}/preseed_spice_{{ item.spice }}.cfg"
+  loop:
+    - { stage: "early",           spice: "pub", passbytes: "{{ int_passbytes_pub }}" }
+    - { stage: "early",           spice: "oso", passbytes: "{{ int_passbytes_oso }}" }
+    - { stage: "early",           spice: "fog", passbytes: "{{ int_passbytes_fog }}" }
+    - { stage: "early",           spice: "upg", passbytes: "{{ int_passbytes_upg }}" }
+    - { stage: "early",           spice: "int", passbytes: "{{ int_passbytes_int }}" }
+
+- name: Non-disk type specifi partman related preseeds.
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "{{ dtmp.path }}/{{ item }}.cfg"
+  loop:
+    - preseed_partman_start
+    - preseed_partman_crypto
+    - preseed_partman_raid
+    - preseed_partman_nonraid
+    - preseed_partman_finish
+
+- name: Unique partman disk types for non-RAID.
+  ansible.builtin.template:
+    src: preseed_partman_nonraid_disk.j2
+    dest: "{{ dtmp.path }}/preseed_partman_nonraid_disk_{{ item.disk_type }}.cfg"
+  loop:
+    - { disk_type: "s" }
+    - { disk_type: "v" }
+    - { disk_type: "xv" }
+    
+- name: Unique partman disk types for RAID.
+  ansible.builtin.template:
+    src: preseed_partman_raid_disk.j2
+    dest: "{{ dtmp.path }}/preseed_partman_raid_disk_{{ item.disk_type }}.cfg"
+  loop:
+    - { disk_type: "s" }
+    - { disk_type: "v" }
+    - { disk_type: "xv" }
+
+- name: Physical disks are very "s"pecial - force GPT to help with UEFI (non-RAID).
+  ansible.builtin.lineinfile:
+    path: "{{ dtmp.path }}/preseed_partman_nonraid_disk_s.cfg"
+    line: "{{ item }}"
+  loop:
+    - "d-i partman-partitioning/choose_label select gpt"
+    - "d-i partman-partitioning/default_label string gpt"
+
+- name: Physical disks are very "s"pecial - force GPT to help with UEFI (RAID).
+  ansible.builtin.lineinfile:
+    path: "{{ dtmp.path }}/preseed_partman_raid_disk_s.cfg"
+    line: "{{ item }}"
+  loop:
+    - "d-i partman-partitioning/choose_label select gpt"
+    - "d-i partman-partitioning/default_label string gpt"
+
+- name: Unique partman recipes for partitioning.
+  ansible.builtin.template:
+    src: preseed_partman_recipe.j2
+    dest: "{{ dtmp.path }}/preseed_partman_recipe_{{ item.raid }}_{{ item.spice }}.cfg"
+  loop:
+    - { raid: "raid",     spice: pub, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
+    - { raid: "nonraid",  spice: pub, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
+    - { raid: "raid",     spice: oso, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
+    - { raid: "nonraid",  spice: oso, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
+    - { raid: "raid",     spice: fog, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
+    - { raid: "nonraid",  spice: fog, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
+    - { raid: "raid",     spice: upg, swapmin: "{{ int_mb_swap_existing }}",  swapmax: "{{ int_mb_swap_existing }}" }
+    - { raid: "nonraid",  spice: upg, swapmin: "{{ int_mb_swap_existing }}",  swapmax: "{{ int_mb_swap_existing }}" }
+    - { raid: "raid",     spice: int, swapmin: "{{ int_mb_swap_warehouse }}", swapmax: "{{ int_mb_swap_warehouse }}" }
+    - { raid: "nonraid",  spice: int, swapmin: "{{ int_mb_swap_warehouse }}", swapmax: "{{ int_mb_swap_warehouse }}" }
+

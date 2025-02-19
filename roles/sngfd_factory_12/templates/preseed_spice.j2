@@ -1,0 +1,20 @@
+{% include 'header.j2' %}
+
+{% if item.passbytes|int > 0 %}
+# sng_early_command is entirely for password changes (only on cdrom)
+d-i preseed/early_command string /cdrom/sng_early_{{ item.spice }}_command
+{% endif %}
+
+{% if item.passbytes|int >= 0 %}
+# User default password. The way its been.
+d-i passwd/user-password password {{ str_old_user_pass }}
+d-i passwd/user-password-again password {{ str_old_user_pass }}
+{% endif %}
+
+{% if item.spice == "upg" or item.spice == "int" %}
+# US English is required for Sangoma support
+d-i debian-installer/locale string en_US
+d-i debian-installer/language string en
+d-i debian-installer/country string US
+d-i keyboard-configuration/xkb-keymap select us
+{% endif %}

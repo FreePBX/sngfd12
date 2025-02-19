@@ -1,0 +1,214 @@
+{% include 'header.j2' %}
+
+# Expert recipe. Very tasty.
+d-i partman-auto/choose_recipe select sng_{{ item.raid }}_recipe
+
+# The recipe itself. Probably where the spice nomenclature was first pondered...
+d-i partman-auto/expert_recipe string			\
+sng_{{ item.raid }}_recipe ::				\
+	1 1 1 free					\
+		label{ sngnonefi }			\
+		$iflabel{ msdos }			\
+		$reusemethod{ }				\
+		method{ biosgrub }			\
+		format{ }				\
+	.						\
+	768 788 1024 free				\
+		label{ sngefi }				\
+		$iflabel{ gpt }				\
+		$reusemethod{ }				\
+		method{ efi }				\
+		format{ }				\
+	.						\
+{% if item.raid == "raid" %}
+	768 788 1024 raid				\
+		method{ raid }				\
+{% else %}
+	768 788 1024 ext4				\
+		method{ format }			\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /boot }			\
+		options/discard{ discard }		\
+{% endif %}
+		label{ sngboot }			\
+		format{ }				\
+	.						\
+	10 500 {{ int_mb_ssd_wear }} free				\
+		label{ sngssdwear }			\
+		method{ keep }				\
+		options/discard{ discard }		\
+{% if item.raid == "raid" %}
+	.						\
+	3500 9999 -1 raid				\
+		label{ sngraid }			\
+		method{ raid }				\
+		format{ }				\
+{% else %}
+		$iflabel{ gpt }				\
+{% endif %}
+	.						\
+	1100 1200 2500 ext4				\
+		label{ sngroot }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvroot }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ / }				\
+		options/discard{ discard }		\
+	.						\
+	{{ item.swapmin }} 777 {{ item.swapmax }} linux-swap		\
+		label{ sngswap }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvswap }			\
+		method{ swap }				\
+		format{ }				\
+	.						\
+	100 777 2000 ext4				\
+		label{ sngsrv }				\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvsrv }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /srv }			\
+		options/discard{ discard }		\
+		options/nodev{ nodev }			\
+		options/nosuid{ nosuid }		\
+	.						\
+	100 777 2000 ext4				\
+		label{ snghome }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvhome }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /home }			\
+		options/discard{ discard }		\
+		options/nodev{ nodev }			\
+		options/nosuid{ nosuid }		\
+	.						\
+	100 777 2000 ext4				\
+		label{ sngusrlocal }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvusrlocal }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /usr/local }		\
+		options/discard{ discard }		\
+	.						\
+	100 777 2000 ext4				\
+		label{ sngtmp }				\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvtmp }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /tmp }			\
+		options/discard{ discard }		\
+		options/nodev{ nodev }			\
+		options/noexec{ noexec }		\
+		options/nosuid{ nosuid }		\
+	.						\
+	4800 5555 10000 ext4				\
+		label{ sngusr }				\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvusr }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /usr }			\
+		options/discard{ discard }		\
+	.						\
+	3500 5555 15151 ext4				\
+		label{ sngvar }				\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvvar }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /var }			\
+		options/discard{ discard }		\
+		options/nodev{ nodev }			\
+		options/nosuid{ nosuid }		\
+	.						\
+	200 1111 5000 ext4				\
+		label{ sngvartmp }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvvartmp }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /var/tmp }			\
+		options/discard{ discard }		\
+		options/nodev{ nodev }			\
+		options/noexec{ noexec }		\
+		options/nosuid{ nosuid }		\
+	.						\
+	100 5555 15151 ext4				\
+		label{ sngvarlog }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvvarlog }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /var/log }			\
+		options/discard{ discard }		\
+		options/nodev{ nodev }			\
+		options/noexec{ noexec }		\
+		options/nosuid{ nosuid }		\
+	.						\
+	100 1111 5000 ext4				\
+		label{ sngvarlogaudit }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvvarlogaudit }		\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /var/log/audit }		\
+		options/discard{ discard }		\
+		options/nodev{ nodev }			\
+		options/noexec{ noexec }		\
+		options/nosuid{ nosuid }		\
+	.						\
+	100 5555 -1 ext4				\
+		label{ sngvarspool }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvvarspool }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /var/spool }		\
+		options/discard{ discard }		\
+		options/nodev{ nodev }			\
+		options/nosuid{ nosuid }		\
+	.
+
+{% if item.raid == "nonraid" %}
+d-i partman-auto/method string lvm
+{% endif %}

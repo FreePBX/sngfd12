@@ -1,0 +1,97 @@
+#!/bin/sh
+{% include 'header.j2' %}
+
+logger -t sng "BEGIN EARLY PARTMAN COMMAND"
+
+# get previous UEFI out of the way
+# and don't trash the thumb drive
+umount /media || true
+
+# should not be necessary to turn off swap
+swapoff -a
+
+# drive destroyer
+# 1. try to auto-assemble any lingering RAIDs
+# 2. wipe LVM
+# 3. stop RAID
+# 4. wipe partitions (to get the RAID superblocks)
+# 5. wipe MBRs of the disks
+# TODO: consider wipefs utility (if available in installer)
+# TODO: make it simpler -- seems like overkill
+# TODO: make it more generic and catch all the RAIDs (md127 anyone ?)
+
+# hmm can we start the array without causing lots of problems ?
+# because partial arrays give us grief...
+logger -t sng "REASSEMBLING ALL RAID ARRAYS"
+mdadm --assemble --scan || true
+sync
+
+logger -t sng "PVREMOVES OF RAID ARRAYS"
+pvremove -f -f -y /dev/md0 /dev/md1 /dev/md2 /dev/md3 /dev/md4 || true
+pvremove -f -f -y /dev/md5 /dev/md6 /dev/md7 /dev/md8 /dev/md9 || true
+sync
+
+logger -t sng "REMOVING PARTITIONS FROM RAID ARRAYS"
+for disk in $(list-devices disk | grep -e 'da$' -e 'db$' -e 'dc$' -e 'dd$' -e 'de$' | cut -f3 -d/); do
+	for partition in $(list-devices partition | grep $disk); do
+		for raid in 0 1 2 3 4 5 6 7 8 9; do
+			mdadm --fail /dev/md${raid} ${partition} || true
+			mdadm --remove /dev/md${raid} ${partition} || true
+		done
+	done
+done
+sync
+
+# should fail immediately
+logger -t sng "REASSEMBLING ALL RAID ARRAYS AGAIN (SHOULD FAIL)"
+mdadm --assemble --scan || true
+sync
+
+for raid in 0 1 2 3 4 5 6 7 8 9; do
+	mdadm --stop /dev/md${raid} || true
+	logger -t sng "STOPPING md ${raid}"
+done
+sync
+
+for disk in $(list-devices disk | grep -e 'da$' -e 'db$' | cut -f3 -d/); do
+	logger -t sng "INSPECTING disk ${disk}"
+	size=$(cat /sys/block/${disk}/size)
+	logger -t sng "SIZE disk ${disk} is ${size}"
+	# in lab, using a thumb drive at 16GB, and that appears as a disk
+	# but we do not want to wipe the thumb drive, only the big disks
+	if [ $size -gt 213456789 ]; then
+		for partition in $(list-devices partition | grep $disk); do
+			mdadm --zero-superblock $partition || true
+			sync
+			dd if=/dev/zero of=$partition bs=1M count=100
+			logger -t sng "ZEROED partition ${partition}"
+			sync
+		done
+		mdadm --zero-superblock $disk || true
+		dd if=/dev/zero of=/dev/$disk bs=1M count=100
+		logger -t sng "ZEROED disk ${disk}"
+		sync
+	fi
+done
+sync
+
+for raid in 0 1 2 3 4 5 6 7 8 9; do
+	mdadm --stop --wait /dev/md${raid} || true
+	logger -t sng "AGAIN STOPPING md ${raid}"
+done
+sync
+
+logger -t sng "AGAIN REMOVING PARTITIONS FROM RAID ARRAYS"
+for disk in $(list-devices disk | grep -e 'da$' -e 'db$' -e 'dc$' -e 'dd$' -e 'de$' | cut -f3 -d/); do
+	for partition in $(list-devices partition | grep $disk); do
+		for raid in 0 1 2 3 4 5 6 7 8 9; do
+			mdadm --fail /dev/md${raid} ${partition} || true
+			mdadm --remove /dev/md${raid} ${partition} || true
+		done
+	done
+done
+sync
+
+/run/sngdiskpass || true
+
+logger -t sng "END EARLY PARTMAN COMMAND"

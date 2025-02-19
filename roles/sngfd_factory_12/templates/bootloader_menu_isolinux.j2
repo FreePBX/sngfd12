@@ -1,0 +1,124 @@
+menu hshift 2
+menu width 70
+menu title {{ str_our_full_name }} BIOS Installer menu
+include stdmenu.cfg
+menu begin basicfpbx
+	menu label ^Basic FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
+		menu title Basic FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
+		include stdmenu.cfg
+		label mainmenubasic
+			menu label ^Back...
+			menu exit
+{% set localized = "" %}
+{% for spice in ["PUB", "FOG"] %}
+{% if spice == "UPG" or spice == "INT" %}
+	{% set localized = "locale=en_US language=en country=US keymap=us" %}
+{% endif %}
+menu begin spice{{ spice|lower }}
+	menu label Auto FreePBX {{ str_freepbx_version }} "^{{ spice }}" install {{ str_script_version }}
+		menu title Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" disk wipe install
+		include stdmenu.cfg
+		label mainmenu{{ spice|lower }}
+			menu label ^Back...
+			menu exit
+		label autofpbx{{ spice|lower }}
+			menu label ^YES WIPE MY DISKS AND INSTALL "{{ spice }}"
+			kernel /install.amd/vmlinuz
+			append spicelevel={{ spice|lower }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+			text help
+
+
+	MINIMUM DISK SIZE: 30G for PUB or FOG
+	WARNING: The installer will wipe all your disks automatically.
+	RAID1 is automatic on disks > ~100G - but works better on UEFI.
+
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+			endtext
+		label autofpbxserial{{ spice|lower }}
+			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^SERIAL)
+			kernel /install.amd/vmlinuz
+			append spicelevel={{ spice|lower }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+			text help
+
+
+	MINIMUM DISK SIZE: 30G for PUB or FOG
+	WARNING: The installer will wipe all your disks automatically.
+	RAID1 is automatic on disks > ~100G - but works better on UEFI.
+	This option will send and receive control on the serial port.
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+			endtext
+menu end
+{% endfor %}
+menu end
+menu begin advancedfpbx
+	menu label ^Advanced FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
+		menu title Advanced FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
+		include stdmenu.cfg
+		label mainmenuadvanced
+			menu label ^Back...
+			menu exit
+{% set localized = "" %}
+{% for spice in ["OSO", "UPG", "INT"] %}
+{% if spice == "UPG" or spice == "INT" %}
+	{% set localized = "locale=en_US language=en country=US keymap=us" %}
+{% endif %}
+menu begin spice{{ spice|lower }}
+	menu label Auto FreePBX {{ str_freepbx_version }} "^{{ spice }}" install {{ str_script_version }}
+		menu title Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" disk wipe install
+		include stdmenu.cfg
+		label mainmenu{{ spice|lower }}
+			menu label ^Back...
+			menu exit
+		label autofpbx{{ spice|lower }}
+			menu label ^YES WIPE MY DISKS AND INSTALL "{{ spice }}"
+			kernel /install.amd/vmlinuz
+			append spicelevel={{ spice|lower }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+			text help
+
+
+	MINIMUM DISK SIZE: 30G for OSO - 40G for UPG - 50G for INT
+	WARNING: The installer will wipe all your disks automatically.
+	RAID1 is automatic on disks > ~100G - but works better on UEFI.
+
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+			endtext
+		label autofpbxserial{{ spice|lower }}
+			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^SERIAL)
+			kernel /install.amd/vmlinuz
+			append spicelevel={{ spice|lower }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+			text help
+
+
+	MINIMUM DISK SIZE: 30G for OSO - 40G for UPG - 50G for INT
+	WARNING: The installer will wipe all your disks automatically.
+	RAID1 is automatic on disks > ~100G - but works better on UEFI.
+	This option will send and receive control on the serial port.
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+			endtext
+menu end
+{% endfor %}
+menu end
+label rescue
+	menu label ^Rescue mode
+	kernel /install.amd/vmlinuz
+	append vga=788 initrd=/install.amd/initrd.gz rescue/enable=true
+label rescueserial
+	menu label R^escue mode (SERIAL)
+	kernel /install.amd/vmlinuz
+	append initrd=/install.amd/initrd.gz rescue/enable=true console=tty0 console=ttyS0,115200n8
+	text help
+
+
+	This option will send and receive control on the serial port.
+	endtext
+label help
+	menu label ^Help tips
+	text help
+
+
+	Heads up - this is the old BIOS installer. Instead, you might
+	try the UEFI installer. (Check your BIOS.) And take a backup!
+	PUB is for the PUBlic. FOG for cloud. Good if new to FreePBX.
+	WARNING: The installer will wipe all your disks automatically.
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+	endtext

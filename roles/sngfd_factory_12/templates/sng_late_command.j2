@@ -1,0 +1,461 @@
+#!/bin/sh
+{% include 'header.j2' %}
+
+set -e
+set +x
+logger -t sng "BEGIN LATE COMMAND"
+
+logger -t sng "BEGIN NETWORKING PARTS OF LATE COMMAND"
+
+# check for networking
+if ! ping -c 2 -w 5 -W 10 github.com >/dev/null 2>&1; then
+	logger -t sng "NETWORKING ERROR PLEASE CHECK"
+else
+	# download the FreePBX shell script installer
+	# (less typing for the warehouse :)
+	in-target wget -O /var/tmp/sng_freepbx_debian_install.sh https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh
+	in-target chmod +x /var/tmp/sng_freepbx_debian_install.sh
+
+	# TODO: check if upgrade without update will hold kernel version
+	in-target apt-get update || true 
+	in-target apt-get -y upgrade || true
+fi
+
+logger -t sng "END NETWORKING PARTS OF LATE COMMAND"
+
+logger -t sng "START ONESHOT PARTS OF LATE COMMAND"
+
+shell_sng_opts="{{ str_sng_opts }}"
+if [ $spicelevel == "oso" ]; then
+	shell_sng_opts="--opensourceonly"
+fi
+if [ $spicelevel == "fog" ]; then
+	shell_sng_opts=""
+fi
+
+# systemd oneshot for automatically installing on next reboot
+cat << EOFO > /target/usr/lib/systemd/system/sng-install-freepbx.service
+{% include 'header.j2' %}
+
+[Unit]
+Description=FreePBX shell script installer
+AssertArchitecture=x86-64
+AssertOSRelease=VERSION_CODENAME={{ str_script_codename }}
+Requires=network-online.target var.mount tmp.mount var-tmp.mount
+# first boot seems buggy but it is a newer systemd condition
+#ConditionFirstBoot=yes
+#Before=first-boot-complete.target
+
+[Service]
+Type=oneshot
+# getting a NOPERMISSION error without this sleep, ugh
+ExecStartPre=/usr/bin/sleep 15
+# make sure we have solid network connectivity before attempting to run the installer
+ExecStartPre=/usr/bin/bash -c 'while ! ping -c 1 github.com >/dev/null 2>&1; do echo "Network not reachable, retrying in 5 seconds..."; sleep 5; systemctl restart networking; done'
+# actually run the installer, with DAHDI drivers
+ExecStart=/usr/bin/bash /var/tmp/sng_freepbx_debian_install.sh ${shell_sng_opts}
+# if not successful, then get ready to reboot and try again
+ExecStartPost=-/bin/sh -c 'latest_log=$\$(ls -t /var/log/pbx/*.log | head -1); grep -q "Finished FreePBX 17 installation process" \$latest_log'
+# if successful, only then will next command run to prevent reinstall on next boot
+ExecStartPost=/usr/bin/systemctl disable sng-install-freepbx
+ExecStartPost=echo "FreePBX installation successful!"
+# all the StopPost stuff will always run, successful install or not successful
+ExecStopPost=echo "System will automatically reboot in one minute."
+ExecStopPost=echo "To break out of a reboot loop, run 'systemctl disable sng-install-freepbx'"
+ExecStopPost=/usr/bin/sleep 20
+ExecStopPost=echo "To break out of a reboot loop, run 'systemctl disable sng-install-freepbx'"
+ExecStopPost=/usr/bin/sleep 20
+ExecStopPost=echo "To break out of a reboot loop, run 'systemctl disable sng-install-freepbx'"
+ExecStopPost=/usr/bin/sleep 20
+ExecStopPost=/usr/bin/systemctl reboot
+StandardOutput=journal+console
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
+#Wants=first-boot-complete.target
+EOFO
+
+in-target systemctl enable sng-install-freepbx
+
+# make the next boot the first boot
+#in-target rm /etc/machine-id
+
+logger -t sng "END ONESHOT PARTS OF LATE COMMAND"
+
+# generic late command finish
+logger -t sng "START GENERIC PARTS OF LATE COMMAND"
+
+# de-brand
+cat << EOFORG > /target/etc/dpkg/origins/sangoma
+Vendor: {{ str_vendor }}
+Vendor-URL: {{ str_vendor_url }}
+Parent: Debian
+EOFORG
+
+cd /target/etc/dpkg/origins
+ln -sf sangoma default
+
+cat << EOFREL > /target/usr/lib/os-release
+BUG_REPORT_URL="https://www.github.com/FreePBX/issue-tracker/"
+BUILD_ID={{ str_script_build }}
+CPE_NAME={{ cpeid|lower }}
+DOCUMENTATION_URL="https://sangomakb.atlassian.net/wiki/spaces/FP/overview/"
+HOME_URL="https://www.freepbx.org/"
+ID=debian
+NAME="{{ str_our_full_name }}"
+PRETTY_NAME="{{ str_our_full_name }} {{ str_script_major }} with FreePBX {{ str_freepbx_version }} derived from Debian {{ str_script_major }} ({{ str_deb_codename }})"
+SUPPORT_URL="https://www.freepbx.org/support/"
+VARIANT={{ str_spice }}
+VARIANT_ID={{ str_spice|lower }}
+VENDOR_NAME={{ str_vendor }}
+VENDOR_URL="{{ str_vendor_url }}"
+VERSION="{{ str_script_major }} ({{ str_script_codename }})"
+VERSION_CODENAME={{ str_script_codename }}
+VERSION_ID="{{ str_script_major }}"
+EOFREL
+
+cat << EOFMOTD > /target/etc/motd
+
+FFFF RR   EEEE EEEE PP  BB  X X
+FFF  RRR  EEE  EEE  PPP BBB  X
+F    R  R EEEE EEEE P   BB  X X
+
+{{ str_our_full_name }} {{ str_script_major }} with FreePBX {{ str_freepbx_version }}
+is derived from Debian {{ str_script_major }} ({{ str_deb_codename }})
+
+{{ str_our_full_name }} {{ str_script_version }} comes with no guarantees
+or warranties of any sorts, either written or implied.
+
+The Distribution is released as GPLv2. Individual packages
+in the distribution come with their own licences.
+
+Please visit https://FreePBX.org/ for more information.
+
+EOFMOTD
+
+cp /target/etc/motd /target/usr/share/base-files/motd
+
+echo "FREEPBX INSTALLER PLACEHOLDER - STILL INSTALLING, PLEASE WAIT!!!" >> /target/usr/share/base-files/motd
+echo "FREEPBX INSTALLER PLACEHOLDER - STILL INSTALLING, PLEASE WAIT!!!" >> /target/usr/share/base-files/motd
+echo "FREEPBX INSTALLER PLACEHOLDER - STILL INSTALLING, PLEASE WAIT!!!" >> /target/usr/share/base-files/motd
+
+sed -i "s/Debian GNU\/Linux/{{ str_our_full_name }}/" /target/etc/issue
+sed -i "s/Debian GNU\/Linux/{{ str_our_full_name }}/" /target/etc/issue.net
+
+# no more apt proxy on next reboot and/or when it leaves the lab
+# TODO: debate merits of doing it here vs. sng-eol script below
+# in-target rm /etc/apt/apt.conf || true
+# maybe: echo "Acquire::http::Proxy \"\";" > /target/etc/apt.conf.d/99noaptproxy
+# maybe: echo "Acquire::https::Proxy \"\";" >> /target/etc/apt.conf.d/99noaptproxy
+
+# regarding default passwords, we have a lot of info we can work with:
+# root@deb12:~# fwconsole sa info
+#Activation Status
+#	Machine ID:	DE:AD:BE:EF:12:34
+#	Lic File:	Present
+#	Deployment:	12345678
+
+# setup script to change default password to Machine ID (MAC address)
+# and purge any apt-proxy
+cat << EOFJ > /target/usr/local/sbin/sng-eol
+#!/bin/sh
+{% include 'header.j2' %}
+
+# change the default passwords to the MAC address
+macpass=\$(/usr/sbin/fwconsole sa info | grep -m 1 "Machine ID:" | sed 's/Machine ID://' | tr -d '[:blank:]')
+macpasslength=\$(echo -n \$macpass | wc -m | tr -d '[:blank:]')
+if [ \$macpasslength != 17 ]; then
+	macpass=\$(ip -br link | grep -m 1 -v LOOPBACK | awk '{print \$3}' | tr '[:lower:]' '[:upper:]')
+	macpasslength=\$(echo -n \$macpass | wc -m | tr -d '[:blank:]')
+	if [ \$macpasslength != 17 ]; then
+		echo "Could not change passwords. Is this deployment active ?  Check 'fwconsole sa i'."
+	fi
+fi
+if [ \$macpasslength = 17 ]; then
+	echo "root:\$macpass" | /sbin/chpasswd
+	echo "{{ str_whoami }}:\$macpass" | /sbin/chpasswd
+	echo "Default passwords for 'root' and '{{ str_whoami }}' CLI users changed to: \$macpass"
+fi
+
+# force user to change their password on next CLI login
+/usr/bin/passwd --expire root
+/usr/bin/passwd --expire {{ str_whoami }}
+
+# check if we want to lock the root user
+# (this may also done near end of Late Command, depends on bool_lock_root_early variable)
+if {{ bool_lock_root_eol|lower }}; then
+	/usr/bin/passwd -l root
+fi
+
+# purge apt-proxy and any other default/warehouse apt configs
+rm -f /etc/apt/apt.conf
+
+# only needed at first reboot
+systemctl disable sng-install-freepbx || true
+
+# show the freepbx sysadmin info again
+fwconsole sa i || true
+
+# self-immolation of installer-related things
+#rm -f /usr/local/sbin/sng-eol
+rm -f /var/tmp/sng_freepbx_debian_install.sh
+rm -f /usr/lib/systemd/system/sng-install-freepbx.service
+EOFJ
+
+chmod +x /target/usr/local/sbin/sng-eol
+
+# put wallpaper into position
+if [ -s /cdrom/sangoma-wallpaper-for-grub.png ]; then
+	cp -a /cdrom/sangoma-wallpaper-for-grub.png /target/boot/grub
+fi
+
+# adjust the menu colors
+# TODO
+
+# custom GRUB defaults
+cat << EOFGD > /target/etc/default/grub.d/10-sangoma.cfg
+{% include 'header.j2' %}
+
+GRUB_CMDLINE_LINUX=""
+GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+GRUB_DEFAULT=0
+GRUB_DISABLE_OS_PROBER=true
+GRUB_DISTRIBUTOR="{{ str_our_full_name }}"
+GRUB_GFXMODE=1024x768
+GRUB_INIT_TUNE="600 800 1 600 1 700 1 500 1 300 1 0 1 900 1"
+GRUB_TIMEOUT=5
+EOFGD
+
+# serial port extras for GRUB
+cat /proc/cmdline
+gotserial=$(grep -m 1 "console=tty0 console=ttyS0" /proc/cmdline | wc -l)
+if [ "$gotserial" -eq 1 ]; then
+	cat << EOFGS > /target/etc/default/grub.d/20-sangoma.cfg
+GRUB_CMDLINE_LINUX="${GRUB_CMDLINE_LINUX} console=tty0 console=ttyS0,115200n8"
+GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"
+GRUB_TERMINAL_INPUT="console serial"
+GRUB_TERMINAL_OUTPUT="gfxterm serial"
+EOFGS
+fi
+
+# set up GRUB tune and wallpaper	
+in-target update-grub
+
+# UEFI RAID rsync EFI partitions automatically via GRUB hook
+# TODO: consider disk type (s v xv - see disk_type elsewhere)
+if [ -d /sys/firmware/efi ] && [ -s /cdrom/copy_to_boot_efi2.j2 ] && [ -b /dev/sdb4 ]; then
+
+	in-target \
+		apt-get \
+		-y \
+		install \
+		"rsync"
+
+	sed \
+		-e 's/#raid_disk_first#/sda1/' \
+		-e 's/#raid_disk_second#/sdb1/' \
+		/cdrom/copy_to_boot_efi2.j2 \
+		> /target/etc/grub.d/90_copy_to_boot_efi2
+
+	in-target bash /etc/grub.d/90_copy_to_boot_efi2
+	in-target update-grub
+
+	# must have the efivars accessible in the chroot before running efibootmgr
+	mount -t efivarfs efivarfs /target/sys/firmware/efi/efivars
+
+	# reset the primary disk boot label
+	#in-target efibootmgr -b 0000 -B || true
+	#in-target efibootmgr -b 0000 -c -d /dev/sda -L RAIDprimary -l \\EFI\\debian\\shimx64.efi
+	in-target efibootmgr -c -d /dev/sda -L RAIDprimary -l \\EFI\\debian\\shimx64.efi
+	umount /target/boot/efi || true
+	
+	# add the secondary disk boot
+	mount /dev/sdb1 /target/boot/efi
+	#in-target efibootmgr -b 0001 -B || true
+	#in-target efibootmgr -b 0001 -c -d /dev/sdb -L RAIDsecondary -l \\EFI\\debian\\shimx64.efi
+	in-target efibootmgr -c -d /dev/sdb -L RAIDsecondary -l \\EFI\\debian\\shimx64.efi
+	#in-target grub-install /dev/sdb
+	umount /target/boot/efi || true
+	mount /dev/sda1 /target/boot/efi
+
+	# boot only from the hard disks in the proper order (primary,secondary)
+	# TODO - seems like it is flipping the drives
+	rp=$(efibootmgr | grep -m 1 RAIDprimary | cut -f1 -d' ' | sed 's/Boot//' | sed 's/*//')
+	rs=$(efibootmgr | grep -m 1 RAIDsecondary | cut -f1 -d' ' | sed 's/Boot//' | sed 's/*//')
+	in-target efibootmgr -o $rp,$rs || true
+
+	# no longer need the efivars because we are done with efibootmgr in the chroot target
+	umount /target/sys/firmware/efi/efivars || true
+
+	#uuid2=$(in-target blkid -o export /dev/sdb1 | grep ^UUID | cut -f2 -d=)
+
+	sed -i '/\/boot\/efi/d' /target/etc/fstab
+	echo "# keep working even if the primary disk in the RAID array fails"				>> /target/etc/fstab
+	echo "/dev/sda1		/boot/efi	vfat	umask=0077,nofail		0	1"	>> /target/etc/fstab
+	echo "/dev/sdb1		/boot/efi2	vfat	umask=0077,nofail,noauto	0	1"	>> /target/etc/fstab
+
+	# wipe reserved part of secondary disk for SSD wear-leveling (3rd partition)
+	in-target blkdiscard /dev/sdb3 || true
+	in-target sfdisk --delete /dev/sdb 3 || true
+
+fi
+
+# wipe reserved part of primary disk for SSD wear-leveling (3rd partition)
+set +e
+in-target blkdiscard /dev/sda3
+in-target sfdisk --delete /dev/sda 3
+in-target blkdiscard /dev/vda3
+in-target sfdisk --delete /dev/vda 3
+in-target blkdiscard /dev/xvda3
+in-target sfdisk --delete /dev/xvda 3
+set -e
+
+if [ $spicelevel == "oso" ] || [ $spicelevel == "fog" ]; then
+	logger -t sng "NOT LOCKING the kernel on ${spicelevel}"
+else
+	logger -t sng "LOCKING the kernel on ${spicelevel}"
+	if [ -n "{{ str_locked_kernel }}" ]; then
+		logger -t sng "LOCKING the kernel to {{ str_locked_kernel }}"
+		# TODO: DAHDI building with DKMS so we can automatically match kernel updates (hmm, compiler)
+		# TODO: speed up the removal of the non-frozen kernel
+		#in-target apt-mark hold linux-image-{{ str_locked_kernel }}
+		# freeze right there kernel, DAHDI would like a word with you
+		gone=$(ls /target/boot/vmlinuz* | grep -v "{{ str_locked_kernel }}" | cut -f4 -d/ | sed 's/vmlinuz-//')
+		in-target apt-get -y remove linux-image-$gone || true
+		in-target apt-get -y install linux-image-{{ str_locked_kernel }}
+	fi
+fi
+
+# '{{ str_whoami }}' user can sudo
+# requires network at this late point because cdrom is unmounted
+in-target apt-get -y install sudo || true
+in-target usermod -a -G sudo {{ str_whoami }} || true
+
+# check if we want to lock the root user
+# (this may also done in sng-eol script, check bool_lock_root_eol variable)
+in-target /usr/bin/passwd -l root
+
+# network interface names are sticky, based on MAC address,
+# and all will be renamed from N to pbxeth
+i=0
+touch /target/etc/network/interfaces.d/pbx-renames
+for mac in $(ip -o link show | grep ether | cut -f2 -d/ | cut -f2 -d' ' | sort); do
+	echo "rename mac/$mac=pbxeth$i" >> /target/etc/network/interfaces.d/pbx-renames
+	nic=$(ip -o link show | grep ether | grep -m 1 $mac | cut -f2 -d: | tr -d ' ')
+	sed -i "s/ $nic/ pbxeth$i/g" /target/etc/network/interfaces
+	i=$((i+1))
+done
+
+sync
+
+# look at disk size to determine how we grow
+# limited options in installer binaries,
+# so lvresize outside target, then in target resize2fs
+# note that lvresize %FREE changes each run eg.
+# if 100G free, and partition grows +80% (so 80G),
+# then 20G is free for the next partition to grow,
+# and a +80% of that 20G would be 16G
+# (check out int_lvm_guided_size for where we start eg. 50% of disk)
+freeG=$(vgs --units G --no-suffix --noheadings -o vg_free pbxvg0 | tr -d ' ' | cut -f1 -d.)
+logger -t sng "Considering resizes with freeG=${freeG}"
+set +e
+if [ $freeG -lt 20 ]; then
+	lvresize -l +20%FREE /dev/mapper/pbxvg0-lvvarspool
+	lvresize -l +20%FREE /dev/mapper/pbxvg0-lvvarlog
+	lvresize -l +50%FREE /dev/mapper/pbxvg0-lvvar
+	lvresize -l +50%FREE /dev/mapper/pbxvg0-lvusr
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvsrv
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvhome
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvroot
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvtmp
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvvartmp
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvusrlocal
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvvarlogaudit
+elif [ $freeG -lt 100 ]; then
+	lvresize -l +60%FREE /dev/mapper/pbxvg0-lvvarspool
+	lvresize -l +50%FREE /dev/mapper/pbxvg0-lvvarlog
+	lvresize -l +50%FREE /dev/mapper/pbxvg0-lvvar
+	lvresize -l +50%FREE /dev/mapper/pbxvg0-lvusr
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvsrv
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvhome
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvroot
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvtmp
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvvartmp
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvusrlocal
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvvarlogaudit
+elif [ $freeG -lt 200 ]; then
+	lvresize -l +60%FREE /dev/mapper/pbxvg0-lvvarspool
+	lvresize -l +50%FREE /dev/mapper/pbxvg0-lvvarlog
+	lvresize -l +50%FREE /dev/mapper/pbxvg0-lvvar
+	lvresize -l +50%FREE /dev/mapper/pbxvg0-lvusr
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvsrv
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvhome
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvroot
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvtmp
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvvartmp
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvusrlocal
+	lvresize -l +2%FREE /dev/mapper/pbxvg0-lvvarlogaudit
+elif [ $freeG -lt 400 ]; then
+	lvresize -l +60%FREE /dev/mapper/pbxvg0-lvvarspool
+	lvresize -l +40%FREE /dev/mapper/pbxvg0-lvvarlog
+	lvresize -l +30%FREE /dev/mapper/pbxvg0-lvvar
+	lvresize -l +10%FREE /dev/mapper/pbxvg0-lvusr
+	lvresize -l +10%FREE /dev/mapper/pbxvg0-lvsrv
+	lvresize -l +10%FREE /dev/mapper/pbxvg0-lvhome
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvroot
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvtmp
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvvartmp
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvusrlocal
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvvarlogaudit
+elif [ $freeG -lt 600 ]; then
+	lvresize -l +60%FREE /dev/mapper/pbxvg0-lvvarspool
+	lvresize -l +40%FREE /dev/mapper/pbxvg0-lvvarlog
+	lvresize -l +40%FREE /dev/mapper/pbxvg0-lvvar
+	lvresize -l +10%FREE /dev/mapper/pbxvg0-lvusr
+	lvresize -l +10%FREE /dev/mapper/pbxvg0-lvsrv
+	lvresize -l +10%FREE /dev/mapper/pbxvg0-lvhome
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvroot
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvtmp
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvvartmp
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvusrlocal
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvvarlogaudit
+else
+	lvresize -l +60%FREE /dev/mapper/pbxvg0-lvvarspool
+	lvresize -l +20%FREE /dev/mapper/pbxvg0-lvvarlog
+	lvresize -l +10%FREE /dev/mapper/pbxvg0-lvvar
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvusr
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvroot
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvsrv
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvhome
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvtmp
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvvartmp
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvusrlocal
+	lvresize -l +5%FREE /dev/mapper/pbxvg0-lvvarlogaudit
+fi
+
+# most of what is left goes to the spool
+lvresize -l +90%FREE /dev/mapper/pbxvg0-lvvarspool
+set -e
+
+sync
+
+# resize the file system on all 11 LVs
+set +e
+in-target resize2fs /dev/mapper/pbxvg0-lvhome
+in-target resize2fs /dev/mapper/pbxvg0-lvroot
+in-target resize2fs /dev/mapper/pbxvg0-lvsrv
+in-target resize2fs /dev/mapper/pbxvg0-lvtmp
+in-target resize2fs /dev/mapper/pbxvg0-lvusr
+in-target resize2fs /dev/mapper/pbxvg0-lvusrlocal
+in-target resize2fs /dev/mapper/pbxvg0-lvvar
+in-target resize2fs /dev/mapper/pbxvg0-lvvarlog
+in-target resize2fs /dev/mapper/pbxvg0-lvvarlogaudit
+in-target resize2fs /dev/mapper/pbxvg0-lvvarspool
+in-target resize2fs /dev/mapper/pbxvg0-lvvartmp
+set -e
+
+in-target sync
+
+logger -t sng "END GENERIC PARTS OF LATE COMMAND"
+logger -t sng "END LATE COMMAND"

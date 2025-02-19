@@ -1,0 +1,164 @@
+{% include 'header.j2' %}
+
+# BEGIN Template logic parts
+
+{% if not bool_pause_reboot %}
+# Do not pause before the reboot at end of installation.
+d-i finish-install/reboot_in_progress note
+{% endif %}
+
+# END Template logic parts
+
+
+# Dynamically assembled parts based on choices made by the user.
+# Each output ISO gets a slightly different version of this file.
+#
+# The preseed is being assembled piece-by-piece in an order
+# that is convenient for the generating shell script,
+# starting with things that are common to all systems.
+# Ultimately, though, the order of items in the preseed file
+# does not change the functionality, only the readability.
+
+# Priority. Boot line does this, but repeated for clarity.
+d-i debconf/priority select critical
+
+# Localization. See preseed_spice.j2 as well.
+#d-i debian-installer/locale string en_US
+#d-i debian-installer/language string en
+#d-i debian-installer/country string US
+#d-i keyboard-configuration/xkb-keymap select us
+
+# Disable RAID detection. Boot line does this, but repeated for clarity.
+# Either way, it does not seem to work very well when overwriting RAID,
+# so we use dd command in the early partman script instead.
+d-i disk-detect/dmraid/enable boolean false
+
+# Clock.
+d-i clock-setup/utc boolean true
+
+# Automatically use the first available network interface.
+# This is also done on the command line but repeated here for clarity.
+d-i netcfg/choose_interface select auto
+
+# Wait on the link longer than default 3 seconds.
+d-i netcfg/link_wait_timeout string 10
+
+# Slow DHCP server is ok.
+d-i netcfg/dhcp_timeout string 60
+d-i netcfg/dhcpv6_timeout string 60
+
+# New internal TLD - thanks ICANN (August 2024).
+d-i netcfg/get_domain string internal
+
+# Apt setup (use the Debian archive mirror)
+d-i mirror/country string manual
+d-i mirror/http/hostname string deb.debian.org
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+
+# Disable scanning additional installation media
+d-i apt-setup/cdrom/set-first boolean false
+
+# Disable the cdrom entries (no effect on netinst image)
+d-i apt-setup/disable-cdrom-entries boolean true
+
+# Package selection via task groups.
+tasksel tasksel/first multiselect standard, web-server, ssh-server
+
+# TODO: Can we lock the kernel version here ?
+# does not seem to work this way in base-installer...
+#d-i base-installer/kernel/image select linux-image-{{ str_locked_kernel }}
+
+# TODO: Extra packages.
+#d-i pkgsel/include string git ansible
+
+# TODO: Do not upgrade packages during initial installation.
+# But toggling these prevents upgrades on subsequent reboots.
+#d-i pkgsel/upgrade select none
+
+# TODO: automatic security updates
+#d-i pkgsel/update-policy select Install security updates automatically
+
+# No package usage survey.
+popularity-contest popularity-contest/participate boolean false
+
+# Boot loader settings (Grub)
+d-i grub-installer/only_debian boolean true
+d-i grub-installer/with_other_os boolean false
+
+# Do not let grub mount file systems looking for OSes.
+d-i grub-installer/enable_os_prober_otheros_yes boolean false
+d-i grub-installer/enable_os_prober_otheros_no boolean true
+d-i grub2/enable_os_prober boolean false
+
+# Username. The way its been.
+d-i passwd/make-user boolean true
+d-i passwd/username string {{ str_whoami }}
+d-i passwd/user-fullname string {{ str_whoami }}
+
+# Root. Locked early. Our new default. Yay!
+d-i passwd/root-login boolean false
+
+# Extra preseed commands to run at various points.
+# Boot command does not work on network installs.
+d-i preseed/boot_command string /cdrom/sng_boot_all_command
+
+# Late command is very heavily customized and works on all installs.
+d-i preseed/late_command string /cdrom/sng_late_all_command
+
+# Don't go overboard on swap if we have a lot of RAM.
+# TODO: does not seem to work
+#d-i partman-auto/cap-ram string 4096
+
+#
+# A few common but dynamic parts...
+#
+
+# Something close to FAI.
+# Boot line does this, but repeated for clarity.
+# Either way, does not seem to matter if this is true or false.
+d-i auto-install/enable boolean {{ bool_automatic|lower }}
+
+# Timezone.
+d-i time/zone string {{ str_timezone }}
+
+# Hostname.
+d-i netcfg/get_hostname string {{ str_host_name }}
+
+#
+# Dynamic parts based on value of tftphost from GRUB linux command line...
+#
+
+# Partman early command to run before partitioning.
+# and just before the mdadm tool runs to detect RAID.
+# TODO: preseed_fetch might handle these downloads automatically
+#preseed_fetch /{{ dn_cdrom }}/sng_early_partman_command /cdrom/sng_early_partman_command; \
+#preseed_fetch /{{ dn_cdrom }}/sng_late_command /cdrom/sng_late_command; \
+#preseed_fetch /{{ dn_cdrom }}/copy_to_boot_efi2.j2 /cdrom/copy_to_boot_efi2.j2; \
+#preseed_fetch /{{ dn_cdrom }}/freepbx-sangoma-apt-repo-pubkey.asc /cdrom/freepbx-sangoma-apt-repo-pubkey.asc; \
+#preseed_fetch /{{ dn_cdrom }}/WARNING.txt /cdrom/WARNING.txt; \
+#preseed_fetch /{{ dn_cdrom }}/sangoma-wallpaper-for-grub.png /cdrom/sangoma-wallpaper-for-grub.png; \
+d-i partman/early_command string \
+	mkdir -p /cdrom; \
+	tftp -g -l /cdrom/sng_early_partman_all_command -r /{{ dn_cdrom }}/sng_early_partman_all_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_late_all_command -r /{{ dn_cdrom }}/sng_late_all_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_late_pub_command -r /{{ dn_cdrom }}/sng_late_pub_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_late_oso_command -r /{{ dn_cdrom }}/sng_late_oso_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_late_fog_command -r /{{ dn_cdrom }}/sng_late_fog_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_late_upg_command -r /{{ dn_cdrom }}/sng_late_upg_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_late_int_command -r /{{ dn_cdrom }}/sng_late_int_command ${tftphost}; \
+	tftp -g -l /cdrom/copy_to_boot_efi2.j2 -r /{{ dn_cdrom }}/copy_to_boot_efi2.j2 ${tftphost}; \
+	tftp -g -l /cdrom/freepbx-sangoma-apt-repo-pubkey.asc -r /{{ dn_cdrom }}/freepbx-sangoma-apt-repo-pubkey.asc ${tftphost}; \
+	tftp -g -l /cdrom/WARNING.txt -r /{{ dn_cdrom }}/WARNING.txt ${tftphost}; \
+	tftp -g -l /cdrom/sangoma-wallpaper-for-grub.png -r /{{ dn_cdrom }}/sangoma-wallpaper-for-grub.png ${tftphost}; \
+	chmod 0555 /cdrom/sng_early_partman_all_command; \
+	chmod 0555 /cdrom/sng_late_all_command; \
+	sh /cdrom/sng_early_partman_all_command
+
+# command will return list of preseeds - either ng or raid, plus disks
+#preseed_fetch /{{ dn_cdrom }}/sng_preseed_chooser /cdrom/sng_preseed_chooser; \
+d-i preseed/include_command string \
+	mkdir -p /cdrom; \
+	tftp -g -l /cdrom/sng_preseed_chooser_all_command -r /{{ dn_cdrom }}/sng_preseed_chooser_all_command ${tftphost}; \
+	chmod 0555 /cdrom/sng_preseed_chooser_all_command; \
+	sh /cdrom/sng_preseed_chooser_all_command \${spicelevel}

@@ -1,0 +1,7 @@
+{% include 'header.j2' %}
+
+# one disk
+d-i partman-auto/disk string /dev/{{ item.disk_type }}da
+
+# typically grub installed on '{{ item.disk_type }}da'
+d-i grub-installer/bootdev string /dev/{{ item.disk_type }}da
