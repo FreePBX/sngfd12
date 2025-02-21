@@ -21,8 +21,8 @@ str_deb_codename: "bookworm"
 str_deb_version: "12"
 
 # Script versioning
-str_script_minor: "1.2-BETA"
-str_script_build: "2025-02-06.1"
+str_script_minor: "1.3-BETA"
+str_script_build: "2025-02-21.1"
 
 # Computed values
 str_script_codename: "{{ str_deb_codename }}"
