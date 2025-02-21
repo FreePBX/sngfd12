@@ -78,6 +78,14 @@
     - { raid: "nonraid",  spice: fog, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
     - { raid: "raid",     spice: upg, swapmin: "{{ int_mb_swap_existing }}",  swapmax: "{{ int_mb_swap_existing }}" }
     - { raid: "nonraid",  spice: upg, swapmin: "{{ int_mb_swap_existing }}",  swapmax: "{{ int_mb_swap_existing }}" }
-    - { raid: "raid",     spice: int, swapmin: "{{ int_mb_swap_warehouse }}", swapmax: "{{ int_mb_swap_warehouse }}" }
-    - { raid: "nonraid",  spice: int, swapmin: "{{ int_mb_swap_warehouse }}", swapmax: "{{ int_mb_swap_warehouse }}" }
 
+- name: Unique Partman Recipes for INT Spice Level.
+  ansible.builtin.template:
+    src: preseed_partman_recipe.j2
+    dest: "{{ dtmp.path }}/preseed_partman_recipe_{{ item.raid }}_{{ item.spice }}_{{ item.size }}.cfg"
+  loop:
+    - { raid: "raid",     spice: int, swapmin: "{{ int_mb_swap_warehouse }}",       swapmax: "{{ int_mb_swap_warehouse }}",   root_partition_size: "{{ root_partition_size_250GB  }}",  size: "250" }
+    - { raid: "raid",     spice: int, swapmin: "{{ int_mb_swap_warehouse }}",       swapmax: "{{ int_mb_swap_warehouse }}",   root_partition_size: "{{ root_partition_size_500GB  }}",  size: "500" }
+    - { raid: "raid",     spice: int, swapmin: "{{ int_mb_swap_warehouse }}",       swapmax: "{{ int_mb_swap_warehouse }}",   root_partition_size: "{{ root_partition_size_1TB  }}",  size: "1TB" }
+    - { raid: "nonraid",  spice: int, swapmin: "{{ int_mb_swap_warehouse }}",       swapmax: "{{ int_mb_swap_warehouse }}",   root_partition_size: "{{ root_partition_size_120GB  }}",  size: "120" }
+    - { raid: "nonraid",  spice: int, swapmin: "{{ int_mb_swap_warehouse }}",       swapmax: "{{ int_mb_swap_warehouse }}",   root_partition_size: "{{ root_partition_size_250GB  }}",  size: "250" }
