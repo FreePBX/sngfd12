@@ -56,8 +56,11 @@
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_fog.cfg", out: "preseed_partman_recipe_nonraid_fog.cfg" }
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_upg.cfg",    out: "preseed_partman_recipe_raid_upg.cfg" }
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg", out: "preseed_partman_recipe_nonraid_upg.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int.cfg",    out: "preseed_partman_recipe_raid_int.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int.cfg", out: "preseed_partman_recipe_nonraid_int.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_250.cfg",    out: "preseed_partman_recipe_raid_int_250.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_500.cfg",    out: "preseed_partman_recipe_raid_int_500.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_1TB.cfg",    out: "preseed_partman_recipe_raid_int_1TB.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_120.cfg", out: "preseed_partman_recipe_nonraid_int_120.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg", out: "preseed_partman_recipe_nonraid_int_250.cfg" }
     - { in: "{{ dcdrom.path }}/sng_boot_all_command",             out: "cdrom/sng_boot_all_command" }
     - { in: "{{ dcdrom.path }}/sng_preseed_chooser_all_command",  out: "cdrom/sng_preseed_chooser_all_command" }
     - { in: "{{ dcdrom.path }}/sng_early_partman_all_command",    out: "cdrom/sng_early_partman_all_command" }
@@ -116,8 +119,11 @@
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_fog.cfg", out: "preseed_partman_recipe_nonraid_fog.cfg" }
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_upg.cfg",    out: "preseed_partman_recipe_raid_upg.cfg" }
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg", out: "preseed_partman_recipe_nonraid_upg.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int.cfg",    out: "preseed_partman_recipe_raid_int.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int.cfg", out: "preseed_partman_recipe_nonraid_int.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_250.cfg",    out: "preseed_partman_recipe_raid_int_250.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_500.cfg",    out: "preseed_partman_recipe_raid_int_500.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_1TB.cfg",    out: "preseed_partman_recipe_raid_int_1TB.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_120.cfg", out: "preseed_partman_recipe_nonraid_int_120.cfg" }
+    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg", out: "preseed_partman_recipe_nonraid_int_250.cfg" }
     - { in: "{{ dcdrom.path }}/sng_boot_all_command",             out: "cdrom/sng_boot_all_command" }
     - { in: "{{ dcdrom.path }}/sng_preseed_chooser_all_command",  out: "cdrom/sng_preseed_chooser_all_command" }
     - { in: "{{ dcdrom.path }}/sng_early_partman_all_command",    out: "cdrom/sng_early_partman_all_command" }
@@ -242,11 +248,20 @@
       -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg"
       -   "preseed_partman_recipe_nonraid_upg.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_int.cfg"
-      -   "preseed_partman_recipe_raid_int.cfg"
+      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_int_250.cfg"
+      -   "preseed_partman_recipe_raid_int_250.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int.cfg"
-      -   "preseed_partman_recipe_nonraid_int.cfg"
+      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_int_500.cfg"
+      -   "preseed_partman_recipe_raid_int_500.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_int_1TB.cfg"
+      -   "preseed_partman_recipe_raid_int_1TB.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_120.cfg"
+      -   "preseed_partman_recipe_nonraid_int_120.cfg"
+      - -map
+      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg"
+      -   "preseed_partman_recipe_nonraid_int_250.cfg"
       - -map
       -   "{{ dcdrom.path }}/sng_boot_all_command"
       -   "sng_boot_all_command"
@@ -338,8 +353,11 @@
       -   "./preseed_partman_recipe_nonraid_fog.cfg"
       -   "./preseed_partman_recipe_raid_upg.cfg"
       -   "./preseed_partman_recipe_nonraid_upg.cfg"
-      -   "./preseed_partman_recipe_raid_int.cfg"
-      -   "./preseed_partman_recipe_nonraid_int.cfg"
+      -   "./preseed_partman_recipe_raid_int_250.cfg"
+      -   "./preseed_partman_recipe_raid_int_500.cfg"
+      -   "./preseed_partman_recipe_raid_int_1TB.cfg"
+      -   "./preseed_partman_recipe_nonraid_int_120.cfg"
+      -   "./preseed_partman_recipe_nonraid_int_250.cfg"
       -   "./sng_boot_all_command"
       -   "./sng_early_partman_all_command"
       -   "./sng_preseed_chooser_all_command"
@@ -383,8 +401,11 @@
       -   "./preseed_partman_recipe_nonraid_fog.cfg"
       -   "./preseed_partman_recipe_raid_upg.cfg"
       -   "./preseed_partman_recipe_nonraid_upg.cfg"
-      -   "./preseed_partman_recipe_raid_int.cfg"
-      -   "./preseed_partman_recipe_nonraid_int.cfg"
+      -   "./preseed_partman_recipe_raid_int_250.cfg"
+      -   "./preseed_partman_recipe_raid_int_500.cfg"
+      -   "./preseed_partman_recipe_raid_int_1TB.cfg"
+      -   "./preseed_partman_recipe_nonraid_int_120.cfg"
+      -   "./preseed_partman_recipe_nonraid_int_250.cfg"
       -   "./sng_boot_all_command"
       -   "./sng_early_partman_all_command"
       -   "./sng_preseed_chooser_all_command"

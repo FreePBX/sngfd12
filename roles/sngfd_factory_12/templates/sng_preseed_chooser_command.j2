@@ -47,8 +47,28 @@ if $raid; then
 		echo "preseed_partman_raid_disk_s.cfg"
 		logger -t sng "CHOSE preseed_partman_raid_disk_s.cfg"
 	fi
-	echo "preseed_partman_recipe_raid_${spicelevel}.cfg"
-	logger -t sng "CHOSE preseed_partman_recipe_raid_${spicelevel}.cfg"
+	if [ "$spicelevel" = "int" ]; then
+		disk_part=$(list-devices disk | grep -e 'da$' | cut -f3 -d/)
+                disk_size=$(awk '{print $1 * 512/ 1024/ 1024/ 1024 }' /sys/block/${disk_part}/size)
+                result=$(eval "awk 'BEGIN {
+               		 if ($disk_size <= 250) print 1;
+                	 else if ($disk_size > 250 && $disk_size <= 500) print 2;
+                	 else print 3;
+               		 }'")
+           	if [ "$result" -eq 1 ]; then
+                	echo "preseed_partman_recipe_raid_${spicelevel}_250.cfg"
+                	logger -t sng "CHOSE preseed_partman_recipe_raid_${spicelevel}_250.cfg"
+        	elif [ "$result" -eq 2 ]; then
+                	echo "preseed_partman_recipe_raid_${spicelevel}_500.cfg"
+                	logger -t sng "CHOSE preseed_partman_recipe_raid_${spicelevel}_500.cfg"
+        	else
+                	echo "preseed_partman_recipe_raid_${spicelevel}_1TB.cfg"
+                	logger -t sng "CHOSE preseed_partman_recipe_raid_${spicelevel}_1TB.cfg"
+        	fi
+	else
+		echo "preseed_partman_recipe_raid_${spicelevel}.cfg"
+		logger -t sng "CHOSE preseed_partman_recipe_raid_${spicelevel}.cfg"
+	fi
 else
 	echo "preseed_partman_nonraid.cfg"
 	logger -t sng "CHOSE preseed_partman_nonraid.cfg"
@@ -62,8 +82,24 @@ else
 		echo "preseed_partman_nonraid_disk_s.cfg"
 		logger -t sng "CHOSE preseed_partman_nonraid_disk_s.cfg"
 	fi
-	echo "preseed_partman_recipe_nonraid_${spicelevel}.cfg"
-	logger -t sng "CHOSE preseed_partman_recipe_nonraid_${spicelevel}.cfg"
+        if [ "$spicelevel" = "int" ]; then
+                disk_part=$(list-devices disk | grep -e 'da$' | cut -f3 -d/)
+                disk_size=$(awk '{print $1 * 512/ 1024/ 1024/ 1024 }' /sys/block/${disk_part}/size)
+		        result=$(eval "awk 'BEGIN {
+          		       if ($disk_size <= 120) print 1;
+                	       else print 2;
+                	       }'")
+        	if [ "$result" -eq 1 ]; then
+                	echo "preseed_partman_recipe_nonraid_${spicelevel}_120.cfg"
+                	logger -t sng "CHOSE preseed_partman_recipe_nonraid_${spicelevel}_120.cfg"
+        	else
+                	echo "preseed_partman_recipe_nonraid_${spicelevel}_250.cfg"
+                	logger -t sng "CHOSE preseed_partman_recipe_nonraid_${spicelevel}_250.cfg"
+        	fi
+	else
+		echo "preseed_partman_recipe_nonraid_${spicelevel}.cfg"
+		logger -t sng "CHOSE preseed_partman_recipe_nonraid_${spicelevel}.cfg"
+	fi
 fi
 	
 echo "preseed_partman_finish.cfg"

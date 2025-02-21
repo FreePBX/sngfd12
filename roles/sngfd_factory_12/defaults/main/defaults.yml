@@ -121,7 +121,12 @@ int_lvm_guided_size: 50
 # but some (most?) VMs do not use GPT partitioning on their virtual disks.
 # TODO: determine if this is better at the end of the disk not in 3rd part
 # Minimum: 1
-int_mb_ssd_wear: 25025
+int_mb_ssd_wear: 10240
+
+root_partition_size_120GB: 24576 
+root_partition_size_250GB: 51200
+root_partition_size_500GB: 102400
+root_partition_size_1TB: 204800
 
 # MegaBytes for swap
 # minimium swap amount

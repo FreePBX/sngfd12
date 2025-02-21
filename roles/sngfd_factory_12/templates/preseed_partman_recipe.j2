@@ -34,7 +34,7 @@ sng_{{ item.raid }}_recipe ::				\
 		label{ sngboot }			\
 		format{ }				\
 	.						\
-	10 500 {{ int_mb_ssd_wear }} free				\
+	10 10240 {{ int_mb_ssd_wear }} free				\
 		label{ sngssdwear }			\
 		method{ keep }				\
 		options/discard{ discard }		\
@@ -48,7 +48,11 @@ sng_{{ item.raid }}_recipe ::				\
 		$iflabel{ gpt }				\
 {% endif %}
 	.						\
+{% if item.spice == "int" %}
+   {{ item.root_partition_size }} 9888 {{ item.root_partition_size }}  \
+{% else %}
 	1100 1200 2500 ext4				\
+{% endif %}
 		label{ sngroot }			\
 		$defaultignore{ }			\
 		$lvmok{ }				\
