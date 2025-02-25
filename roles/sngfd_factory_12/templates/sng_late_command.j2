@@ -214,7 +214,26 @@ fi
 # TODO
 
 # custom GRUB defaults
-cat << EOFGD > /target/etc/default/grub.d/10-sangoma.cfg
+if [ $spicelevel == "int" ]; then
+
+        cat << EOFGD > /target/etc/default/grub.d/10-sangoma.cfg
+{% include 'header.j2' %}
+
+GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,115200n8"
+GRUB_CMDLINE_LINUX_DEFAULT="quiet"
+GRUB_DEFAULT=0
+GRUB_DISABLE_OS_PROBER=true
+GRUB_DISTRIBUTOR="{{ str_our_full_name }}"
+GRUB_GFXMODE=1024x768
+GRUB_INIT_TUNE="600 800 1 600 1 700 1 500 1 300 1 0 1 900 1"
+GRUB_TIMEOUT=5
+GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"
+GRUB_TERMINAL_INPUT="console serial"
+GRUB_TERMINAL_OUTPUT="gfxterm serial"
+EOFGD
+else
+
+        cat << EOFGD > /target/etc/default/grub.d/10-sangoma.cfg
 {% include 'header.j2' %}
 
 GRUB_CMDLINE_LINUX=""
@@ -226,6 +245,8 @@ GRUB_GFXMODE=1024x768
 GRUB_INIT_TUNE="600 800 1 600 1 700 1 500 1 300 1 0 1 900 1"
 GRUB_TIMEOUT=5
 EOFGD
+
+fi
 
 # serial port extras for GRUB
 cat /proc/cmdline
