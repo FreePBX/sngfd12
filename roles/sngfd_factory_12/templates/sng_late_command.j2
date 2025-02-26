@@ -230,7 +230,7 @@ EOFGD
 # serial port extras for GRUB
 cat /proc/cmdline
 gotserial=$(grep -m 1 "console=tty0 console=ttyS0" /proc/cmdline | wc -l)
-if [ "$gotserial" -eq 1 ]; then
+if [ "$gotserial" -eq 1 ] || [ "$spicelevel" == "int" ]; then
 	cat << EOFGS > /target/etc/default/grub.d/20-sangoma.cfg
 GRUB_CMDLINE_LINUX="${GRUB_CMDLINE_LINUX} console=tty0 console=ttyS0,115200n8"
 GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"
