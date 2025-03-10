@@ -4,10 +4,13 @@
 ---
 # file: sngfd_factory_12/tasks/helpers.yml
 
-- name: Copy over the JINJA2 template for EFI RAID failover support via GRUB hook.
+- name: Copy over the JINJA2 template for EFI RAID failover support via GRUB hook and the grub config for dual serial-console support.
   ansible.builtin.copy:
-    src: copy_to_boot_efi2.j2
+    src: "{{ item }}"
     dest: "{{ dcdrom.path }}"
+  loop:
+    - copy_to_boot_efi2.j2
+    - 20-sangoma.cfg
 
 - name: Get some static text files in place.
   ansible.builtin.copy:

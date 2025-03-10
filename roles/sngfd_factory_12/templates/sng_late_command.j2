@@ -5,6 +5,11 @@ set -e
 set +x
 logger -t sng "BEGIN LATE COMMAND"
 
+# If the 20-sangoma.cfg GRUB configuration file exists, copy it to /target/var/tmp/
+if [ -s /cdrom/20-sangoma.cfg ]; then
+	cp -a /cdrom/20-sangoma.cfg /target/var/tmp/
+fi
+
 logger -t sng "BEGIN NETWORKING PARTS OF LATE COMMAND"
 
 # check for networking
@@ -58,6 +63,14 @@ ExecStart=/usr/bin/bash /var/tmp/sng_freepbx_debian_install.sh ${shell_sng_opts}
 ExecStartPost=-/bin/sh -c 'latest_log=$\$(ls -t /var/log/pbx/*.log | head -1); grep -q "Finished FreePBX 17 installation process" \$latest_log'
 # if successful, only then will next command run to prevent reinstall on next boot
 ExecStartPost=/usr/bin/systemctl disable sng-install-freepbx
+EOFO
+if [ "$spicelevel" == "int" ]; then
+cat << EOFO2 >> /target/usr/lib/systemd/system/sng-install-freepbx.service
+ExecStartPost=cp /var/tmp/20-sangoma.cfg /etc/default/grub.d/
+ExecStartPost=update-grub
+EOFO2
+fi
+cat << EOFO3 >> /target/usr/lib/systemd/system/sng-install-freepbx.service
 ExecStartPost=echo "FreePBX installation successful!"
 # all the StopPost stuff will always run, successful install or not successful
 ExecStopPost=echo "System will automatically reboot in one minute."
@@ -74,7 +87,7 @@ StandardError=inherit
 [Install]
 WantedBy=multi-user.target
 #Wants=first-boot-complete.target
-EOFO
+EOFO3
 
 in-target systemctl enable sng-install-freepbx
 
@@ -230,7 +243,7 @@ EOFGD
 # serial port extras for GRUB
 cat /proc/cmdline
 gotserial=$(grep -m 1 "console=tty0 console=ttyS0" /proc/cmdline | wc -l)
-if [ "$gotserial" -eq 1 ] || [ "$spicelevel" == "int" ]; then
+if [ "$gotserial" -eq 1 ]; then
 	cat << EOFGS > /target/etc/default/grub.d/20-sangoma.cfg
 GRUB_CMDLINE_LINUX="${GRUB_CMDLINE_LINUX} console=tty0 console=ttyS0,115200n8"
 GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"

@@ -61,6 +61,7 @@
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_1TB.cfg",    out: "preseed_partman_recipe_raid_int_1TB.cfg" }
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_120.cfg", out: "preseed_partman_recipe_nonraid_int_120.cfg" }
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg", out: "preseed_partman_recipe_nonraid_int_250.cfg" }
+    - { in: "{{ dcdrom.path }}/20-sangoma.cfg", out: "cdrom/20-sangoma.cfg" }
     - { in: "{{ dcdrom.path }}/sng_boot_all_command",             out: "cdrom/sng_boot_all_command" }
     - { in: "{{ dcdrom.path }}/sng_preseed_chooser_all_command",  out: "cdrom/sng_preseed_chooser_all_command" }
     - { in: "{{ dcdrom.path }}/sng_early_partman_all_command",    out: "cdrom/sng_early_partman_all_command" }
@@ -124,6 +125,7 @@
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_1TB.cfg",    out: "preseed_partman_recipe_raid_int_1TB.cfg" }
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_120.cfg", out: "preseed_partman_recipe_nonraid_int_120.cfg" }
     - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg", out: "preseed_partman_recipe_nonraid_int_250.cfg" }
+    - { in: "{{ dcdrom.path }}/20-sangoma.cfg", out: "cdrom/20-sangoma.cfg" }
     - { in: "{{ dcdrom.path }}/sng_boot_all_command",             out: "cdrom/sng_boot_all_command" }
     - { in: "{{ dcdrom.path }}/sng_preseed_chooser_all_command",  out: "cdrom/sng_preseed_chooser_all_command" }
     - { in: "{{ dcdrom.path }}/sng_early_partman_all_command",    out: "cdrom/sng_early_partman_all_command" }
@@ -263,6 +265,9 @@
       -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg"
       -   "preseed_partman_recipe_nonraid_int_250.cfg"
       - -map
+      -   "{{ dcdrom.path }}/20-sangoma.cfg"
+      -   "20-sangoma.cfg"
+      - -map
       -   "{{ dcdrom.path }}/sng_boot_all_command"
       -   "sng_boot_all_command"
       - -map
@@ -358,6 +363,7 @@
       -   "./preseed_partman_recipe_raid_int_1TB.cfg"
       -   "./preseed_partman_recipe_nonraid_int_120.cfg"
       -   "./preseed_partman_recipe_nonraid_int_250.cfg"
+      -   "./20-sangoma.cfg"
       -   "./sng_boot_all_command"
       -   "./sng_early_partman_all_command"
       -   "./sng_preseed_chooser_all_command"
@@ -406,6 +412,7 @@
       -   "./preseed_partman_recipe_raid_int_1TB.cfg"
       -   "./preseed_partman_recipe_nonraid_int_120.cfg"
       -   "./preseed_partman_recipe_nonraid_int_250.cfg"
+      -   "./20-sangoma.cfg"
       -   "./sng_boot_all_command"
       -   "./sng_early_partman_all_command"
       -   "./sng_preseed_chooser_all_command"
