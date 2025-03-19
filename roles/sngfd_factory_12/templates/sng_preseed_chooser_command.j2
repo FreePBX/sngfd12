@@ -50,10 +50,10 @@ if $raid; then
 	if [ "$spicelevel" = "int" ]; then
 		disk_part=$(list-devices disk | grep -e 'da$' | cut -f3 -d/)
                 disk_size=$(awk '{print $1 * 512/ 1024/ 1024/ 1024 }' /sys/block/${disk_part}/size)
-                result=$(eval "awk 'BEGIN {
-               		 if ($disk_size <= 250) print 1;
-                	 else if ($disk_size > 250 && $disk_size <= 500) print 2;
-                	 else print 3;
+		result=$(eval "awk 'BEGIN {
+			if ($disk_size > 900) print 3;
+			else if ($disk_size > 450) print 2;
+			else print 1;
                		 }'")
            	if [ "$result" -eq 1 ]; then
                 	echo "preseed_partman_recipe_raid_${spicelevel}_250.cfg"
@@ -85,10 +85,10 @@ else
         if [ "$spicelevel" = "int" ]; then
                 disk_part=$(list-devices disk | grep -e 'da$' | cut -f3 -d/)
                 disk_size=$(awk '{print $1 * 512/ 1024/ 1024/ 1024 }' /sys/block/${disk_part}/size)
-		        result=$(eval "awk 'BEGIN {
-          		       if ($disk_size <= 120) print 1;
-                	       else print 2;
-                	       }'")
+		result=$(eval "awk 'BEGIN {
+			if ($disk_size > 240) print 2;
+			else print 1;
+			}'")
         	if [ "$result" -eq 1 ]; then
                 	echo "preseed_partman_recipe_nonraid_${spicelevel}_120.cfg"
                 	logger -t sng "CHOSE preseed_partman_recipe_nonraid_${spicelevel}_120.cfg"
