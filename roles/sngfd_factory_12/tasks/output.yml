@@ -27,40 +27,40 @@
     - { in: "{{ dextract.path }}/grubtheme1", out: "boot/grub/theme/1" }
     - { in: "{{ disolinux.path }}/menu.cfg",    out: "isolinux/menu.cfg" }
     - { in: "{{ disolinux.path }}/splash.png",  out: "isolinux/splash.png" }
-    - { in: "{{ dtmp.path }}/README.txt",     out: "README.txt" }
-    - { in: "{{ dtmp.path }}/WARNING.txt",    out: "WARNING.txt" }
-    - { in: "{{ dtmp.path }}/EULA.txt",       out: "EULA.txt" }
     - { in: "{{ dtmp.path }}/grub.cfg",     out: "boot/grub/grub.cfg" }
-    - { in: "{{ dtmp.path }}/preseed.cfg",  out: "preseed.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_pub.cfg",    out: "preseed_spice_pub.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_oso.cfg",    out: "preseed_spice_oso.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_fog.cfg",    out: "preseed_spice_fog.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_upg.cfg",    out: "preseed_spice_upg.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_int.cfg",    out: "preseed_spice_int.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_start.cfg",    out: "preseed_partman_start.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_finish.cfg",   out: "preseed_partman_finish.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_raid.cfg",       out: "preseed_partman_raid.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_nonraid.cfg",    out: "preseed_partman_nonraid.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_crypto.cfg",     out: "preseed_partman_crypto.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_s.cfg",    out: "preseed_partman_raid_disk_s.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_v.cfg",    out: "preseed_partman_raid_disk_v.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_xv.cfg",   out: "preseed_partman_raid_disk_xv.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_s.cfg",   out: "preseed_partman_nonraid_disk_s.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_v.cfg",   out: "preseed_partman_nonraid_disk_v.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_xv.cfg",  out: "preseed_partman_nonraid_disk_xv.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_pub.cfg",    out: "preseed_partman_recipe_raid_pub.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_pub.cfg", out: "preseed_partman_recipe_nonraid_pub.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_oso.cfg",    out: "preseed_partman_recipe_raid_oso.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_oso.cfg", out: "preseed_partman_recipe_nonraid_oso.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_fog.cfg",    out: "preseed_partman_recipe_raid_fog.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_fog.cfg", out: "preseed_partman_recipe_nonraid_fog.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_upg.cfg",    out: "preseed_partman_recipe_raid_upg.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg", out: "preseed_partman_recipe_nonraid_upg.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_250.cfg",    out: "preseed_partman_recipe_raid_int_250.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_500.cfg",    out: "preseed_partman_recipe_raid_int_500.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_1TB.cfg",    out: "preseed_partman_recipe_raid_int_1TB.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_120.cfg", out: "preseed_partman_recipe_nonraid_int_120.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg", out: "preseed_partman_recipe_nonraid_int_250.cfg" }
+    - { in: "{{ dcdrom.path }}/README.txt",     out: "README.txt" }
+    - { in: "{{ dcdrom.path }}/WARNING.txt",    out: "WARNING.txt" }
+    - { in: "{{ dcdrom.path }}/EULA.txt",       out: "EULA.txt" }
+    - { in: "{{ dcdrom.path }}/preseed.cfg",  out: "preseed.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_pub.cfg",    out: "preseed_spice_pub.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_oso.cfg",    out: "preseed_spice_oso.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_fog.cfg",    out: "preseed_spice_fog.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_upg.cfg",    out: "preseed_spice_upg.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_int.cfg",    out: "preseed_spice_int.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_start.cfg",    out: "preseed_partman_start.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_finish.cfg",   out: "preseed_partman_finish.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_raid.cfg",       out: "preseed_partman_raid.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_nonraid.cfg",    out: "preseed_partman_nonraid.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_crypto.cfg",     out: "preseed_partman_crypto.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_raid_disk_s.cfg",    out: "preseed_partman_raid_disk_s.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_raid_disk_v.cfg",    out: "preseed_partman_raid_disk_v.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_raid_disk_xv.cfg",   out: "preseed_partman_raid_disk_xv.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_nonraid_disk_s.cfg",   out: "preseed_partman_nonraid_disk_s.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_nonraid_disk_v.cfg",   out: "preseed_partman_nonraid_disk_v.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_nonraid_disk_xv.cfg",  out: "preseed_partman_nonraid_disk_xv.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_pub.cfg",    out: "preseed_partman_recipe_raid_pub.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_pub.cfg", out: "preseed_partman_recipe_nonraid_pub.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_oso.cfg",    out: "preseed_partman_recipe_raid_oso.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_oso.cfg", out: "preseed_partman_recipe_nonraid_oso.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_fog.cfg",    out: "preseed_partman_recipe_raid_fog.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_fog.cfg", out: "preseed_partman_recipe_nonraid_fog.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_upg.cfg",    out: "preseed_partman_recipe_raid_upg.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_upg.cfg", out: "preseed_partman_recipe_nonraid_upg.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_250.cfg",    out: "preseed_partman_recipe_raid_int_250.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_500.cfg",    out: "preseed_partman_recipe_raid_int_500.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_1TB.cfg",    out: "preseed_partman_recipe_raid_int_1TB.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_int_120.cfg", out: "preseed_partman_recipe_nonraid_int_120.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_int_250.cfg", out: "preseed_partman_recipe_nonraid_int_250.cfg" }
     - { in: "{{ dcdrom.path }}/20-sangoma.cfg", out: "cdrom/20-sangoma.cfg" }
     - { in: "{{ dcdrom.path }}/sng_boot_all_command",             out: "cdrom/sng_boot_all_command" }
     - { in: "{{ dcdrom.path }}/sng_preseed_chooser_all_command",  out: "cdrom/sng_preseed_chooser_all_command" }
@@ -91,40 +91,40 @@
     - { in: "{{ dextract.path }}/grubtheme1", out: "boot/grub/theme/1" }
     - { in: "{{ disolinux.path }}/menu.cfg",    out: "isolinux/menu.cfg" }
     - { in: "{{ disolinux.path }}/splash.png",  out: "isolinux/splash.png" }
-    - { in: "{{ dtmp.path }}/README.txt",     out: "README.txt" }
-    - { in: "{{ dtmp.path }}/WARNING.txt",    out: "WARNING.txt" }
-    - { in: "{{ dtmp.path }}/EULA.txt",       out: "EULA.txt" }
     - { in: "{{ dtmp.path }}/grub.cfg",     out: "boot/grub/grub.cfg" }
-    - { in: "{{ dtmp.path }}/preseed.cfg",  out: "preseed.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_pub.cfg",    out: "preseed_spice_pub.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_oso.cfg",    out: "preseed_spice_oso.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_fog.cfg",    out: "preseed_spice_fog.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_upg.cfg",    out: "preseed_spice_upg.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_spice_int.cfg",    out: "preseed_spice_int.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_start.cfg",    out: "preseed_partman_start.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_finish.cfg",   out: "preseed_partman_finish.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_raid.cfg",       out: "preseed_partman_raid.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_nonraid.cfg",    out: "preseed_partman_nonraid.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_crypto.cfg",     out: "preseed_partman_crypto.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_s.cfg",    out: "preseed_partman_raid_disk_s.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_v.cfg",    out: "preseed_partman_raid_disk_v.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_raid_disk_xv.cfg",   out: "preseed_partman_raid_disk_xv.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_s.cfg",   out: "preseed_partman_nonraid_disk_s.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_v.cfg",   out: "preseed_partman_nonraid_disk_v.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_nonraid_disk_xv.cfg",  out: "preseed_partman_nonraid_disk_xv.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_pub.cfg",    out: "preseed_partman_recipe_raid_pub.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_pub.cfg", out: "preseed_partman_recipe_nonraid_pub.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_oso.cfg",    out: "preseed_partman_recipe_raid_oso.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_oso.cfg", out: "preseed_partman_recipe_nonraid_oso.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_fog.cfg",    out: "preseed_partman_recipe_raid_fog.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_fog.cfg", out: "preseed_partman_recipe_nonraid_fog.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_upg.cfg",    out: "preseed_partman_recipe_raid_upg.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg", out: "preseed_partman_recipe_nonraid_upg.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_250.cfg",    out: "preseed_partman_recipe_raid_int_250.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_500.cfg",    out: "preseed_partman_recipe_raid_int_500.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_raid_int_1TB.cfg",    out: "preseed_partman_recipe_raid_int_1TB.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_120.cfg", out: "preseed_partman_recipe_nonraid_int_120.cfg" }
-    - { in: "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg", out: "preseed_partman_recipe_nonraid_int_250.cfg" }
+    - { in: "{{ dcdrom.path }}/README.txt",     out: "README.txt" }
+    - { in: "{{ dcdrom.path }}/WARNING.txt",    out: "WARNING.txt" }
+    - { in: "{{ dcdrom.path }}/EULA.txt",       out: "EULA.txt" }
+    - { in: "{{ dcdrom.path }}/preseed.cfg",  out: "preseed.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_pub.cfg",    out: "preseed_spice_pub.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_oso.cfg",    out: "preseed_spice_oso.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_fog.cfg",    out: "preseed_spice_fog.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_upg.cfg",    out: "preseed_spice_upg.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_spice_int.cfg",    out: "preseed_spice_int.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_start.cfg",    out: "preseed_partman_start.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_finish.cfg",   out: "preseed_partman_finish.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_raid.cfg",       out: "preseed_partman_raid.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_nonraid.cfg",    out: "preseed_partman_nonraid.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_crypto.cfg",     out: "preseed_partman_crypto.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_raid_disk_s.cfg",    out: "preseed_partman_raid_disk_s.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_raid_disk_v.cfg",    out: "preseed_partman_raid_disk_v.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_raid_disk_xv.cfg",   out: "preseed_partman_raid_disk_xv.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_nonraid_disk_s.cfg",   out: "preseed_partman_nonraid_disk_s.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_nonraid_disk_v.cfg",   out: "preseed_partman_nonraid_disk_v.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_nonraid_disk_xv.cfg",  out: "preseed_partman_nonraid_disk_xv.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_pub.cfg",    out: "preseed_partman_recipe_raid_pub.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_pub.cfg", out: "preseed_partman_recipe_nonraid_pub.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_oso.cfg",    out: "preseed_partman_recipe_raid_oso.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_oso.cfg", out: "preseed_partman_recipe_nonraid_oso.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_fog.cfg",    out: "preseed_partman_recipe_raid_fog.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_fog.cfg", out: "preseed_partman_recipe_nonraid_fog.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_upg.cfg",    out: "preseed_partman_recipe_raid_upg.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_upg.cfg", out: "preseed_partman_recipe_nonraid_upg.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_250.cfg",    out: "preseed_partman_recipe_raid_int_250.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_500.cfg",    out: "preseed_partman_recipe_raid_int_500.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_1TB.cfg",    out: "preseed_partman_recipe_raid_int_1TB.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_int_120.cfg", out: "preseed_partman_recipe_nonraid_int_120.cfg" }
+    - { in: "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_int_250.cfg", out: "preseed_partman_recipe_nonraid_int_250.cfg" }
     - { in: "{{ dcdrom.path }}/20-sangoma.cfg", out: "cdrom/20-sangoma.cfg" }
     - { in: "{{ dcdrom.path }}/sng_boot_all_command",             out: "cdrom/sng_boot_all_command" }
     - { in: "{{ dcdrom.path }}/sng_preseed_chooser_all_command",  out: "cdrom/sng_preseed_chooser_all_command" }
@@ -157,13 +157,13 @@
       -   "{{ dextract.path }}/grubtheme1"
       -   "boot/grub/theme/1"
       - -map
-      -   "{{ dtmp.path }}/README.txt"
+      -   "{{ dcdrom.path }}/README.txt"
       -   "README.txt"
       - -map
-      -   "{{ dtmp.path }}/WARNING.txt"
+      -   "{{ dcdrom.path }}/WARNING.txt"
       -   "WARNING.txt"
       - -map
-      -   "{{ dtmp.path }}/EULA.txt"
+      -   "{{ dcdrom.path }}/EULA.txt"
       -   "EULA.txt"
       - -map
       -   "{{ disolinux.path }}/menu.cfg"
@@ -175,94 +175,94 @@
       -   "{{ dtmp.path }}/grub.cfg"
       -   "boot/grub/grub.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed.cfg"
+      -   "{{ dcdrom.path }}/preseed.cfg"
       -   "preseed.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_spice_pub.cfg"
+      -   "{{ dcdrom.path }}/preseed_spice_pub.cfg"
       -   "preseed_spice_pub.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_spice_oso.cfg"
+      -   "{{ dcdrom.path }}/preseed_spice_oso.cfg"
       -   "preseed_spice_oso.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_spice_fog.cfg"
+      -   "{{ dcdrom.path }}/preseed_spice_fog.cfg"
       -   "preseed_spice_fog.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_spice_upg.cfg"
+      -   "{{ dcdrom.path }}/preseed_spice_upg.cfg"
       -   "preseed_spice_upg.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_spice_int.cfg"
+      -   "{{ dcdrom.path }}/preseed_spice_int.cfg"
       -   "preseed_spice_int.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_start.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_start.cfg"
       -   "preseed_partman_start.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_finish.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_finish.cfg"
       -   "preseed_partman_finish.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_raid.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_raid.cfg"
       -   "preseed_partman_raid.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_nonraid.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_nonraid.cfg"
       -   "preseed_partman_nonraid.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_crypto.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_crypto.cfg"
       -   "preseed_partman_crypto.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_raid_disk_s.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_raid_disk_s.cfg"
       -   "preseed_partman_raid_disk_s.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_raid_disk_v.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_raid_disk_v.cfg"
       -   "preseed_partman_raid_disk_v.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_raid_disk_xv.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_raid_disk_xv.cfg"
       -   "preseed_partman_raid_disk_xv.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_nonraid_disk_s.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_nonraid_disk_s.cfg"
       -   "preseed_partman_nonraid_disk_s.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_nonraid_disk_v.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_nonraid_disk_v.cfg"
       -   "preseed_partman_nonraid_disk_v.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_nonraid_disk_xv.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_nonraid_disk_xv.cfg"
       -   "preseed_partman_nonraid_disk_xv.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_pub.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_raid_pub.cfg"
       -   "preseed_partman_recipe_raid_pub.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_pub.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_pub.cfg"
       -   "preseed_partman_recipe_nonraid_pub.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_oso.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_raid_oso.cfg"
       -   "preseed_partman_recipe_raid_oso.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_oso.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_oso.cfg"
       -   "preseed_partman_recipe_nonraid_oso.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_fog.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_raid_fog.cfg"
       -   "preseed_partman_recipe_raid_fog.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_fog.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_fog.cfg"
       -   "preseed_partman_recipe_nonraid_fog.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_upg.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_raid_upg.cfg"
       -   "preseed_partman_recipe_raid_upg.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_upg.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_upg.cfg"
       -   "preseed_partman_recipe_nonraid_upg.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_int_250.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_250.cfg"
       -   "preseed_partman_recipe_raid_int_250.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_int_500.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_500.cfg"
       -   "preseed_partman_recipe_raid_int_500.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_raid_int_1TB.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_raid_int_1TB.cfg"
       -   "preseed_partman_recipe_raid_int_1TB.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_120.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_int_120.cfg"
       -   "preseed_partman_recipe_nonraid_int_120.cfg"
       - -map
-      -   "{{ dtmp.path }}/preseed_partman_recipe_nonraid_int_250.cfg"
+      -   "{{ dcdrom.path }}/preseed_partman_recipe_nonraid_int_250.cfg"
       -   "preseed_partman_recipe_nonraid_int_250.cfg"
       - -map
       -   "{{ dcdrom.path }}/20-sangoma.cfg"

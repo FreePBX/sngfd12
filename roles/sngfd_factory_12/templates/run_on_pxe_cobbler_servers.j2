@@ -1,0 +1,90 @@
+#!/bin/sh
+
+# Copy over the ISO and the TAR to the cobbler PXE boot server. Then run there AS ROOT:
+
+if [ "x$1" = "x" ]; then
+	echo "Usage: $0 192.0.2.42"
+	echo "Must supply IP of production Cobbler Server as argument."
+	exit
+fi
+
+# Change to whatever your TFTP / PXE boot server IPv4 is:
+COBBLER_SERVER="$1"
+
+# TFTP directory varies by operating system flavor.
+
+# on FC41, Rocky9:
+{% if item.pxe_cob_distro == "ROCKY9" %}
+TFTP_DIR=/var/lib/tftpboot
+{% else %}
+# on CentOS 7 / SNG7:
+TFTP_DIR=/tftpboot
+{% endif %}
+
+# Remove any existing profile/distro with the same name.
+cobbler profile remove --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-SERIAL
+cobbler profile remove --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-SERIAL-TEST
+cobbler profile remove --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-MONITOR
+cobbler profile remove --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-MONITOR-TEST
+
+# Blow away any potential old duplicates.
+cobbler profile remove --name={{ str_cob_base }}-x86_64
+cobbler distro remove --name={{ str_cob_base }}-x86_64
+cobbler repo remove --name={{ str_cob_base }}-x86_64
+
+# Stash copy of the new files into /root directory.
+sudo mkdir -p /root/{{ str_iso_out_base }} /root
+sudo cp -ab /tmp/{{ str_iso_out_base }}* /root/{{ str_iso_out_base }}
+
+# Install the new distro.
+cd ${TFTP_DIR}
+tar xf /tmp/{{ str_iso_out_base }}-PXE.tar
+mkdir -p /mnt/{{ str_iso_out_base }}
+mount -t iso9660 -o loop,ro /tmp/{{ fn_iso_output }} /mnt/{{ str_iso_out_base }}
+cobbler import --name={{ str_cob_base }} --arch=x86_64 --path=/mnt/{{ str_iso_out_base }}
+umount /mnt/{{ str_iso_out_base }}
+cobbler distro edit --name={{ str_cob_base }}-x86_64 --initrd=${TFTP_DIR}/{{ dn_cdrom }}/initrd.gz
+
+# Cobbler profile edit by operating system flavor
+
+# On FC41, Rocky9:
+{% if item.pxe_cob_distro == "ROCKY9" %}
+cobbler profile add --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-SERIAL --distro={{ str_cob_base }}-x86_64 --autoinstall='' --kernel-options="locale=en_US language=en country=US keymap=us dmraid=false url=tftp://${COBBLER_SERVER}/{{ dn_cdrom }}/./preseed.cfg tftphost=${COBBLER_SERVER} fpbxrepo=prod console=tty0 console=ttyS0,115200n8 spicelevel=int auto=true interface=auto priority=critical"
+cobbler profile add --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-SERIAL-TEST --distro={{ str_cob_base }}-x86_64 --autoinstall='' --kernel-options="locale=en_US language=en country=US keymap=us dmraid=false url=tftp://${COBBLER_SERVER}/{{ dn_cdrom }}/./preseed.cfg tftphost=${COBBLER_SERVER} fpbxrepo=test console=tty0 console=ttyS0,115200n8 spicelevel=int auto=true interface=auto priority=critical"
+cobbler profile add --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-MONITOR --distro={{ str_cob_base }}-x86_64 --autoinstall='' --kernel-options="locale=en_US language=en country=US keymap=us dmraid=false url=tftp://${COBBLER_SERVER}/{{ dn_cdrom }}/./preseed.cfg tftphost=${COBBLER_SERVER} fpbxrepo=prod spicelevel=int auto=true interface=auto priority=critical"
+cobbler profile add --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-MONITOR-TEST --distro={{ str_cob_base }}-x86_64 --autoinstall='' --kernel-options="locale=en_US language=en country=US keymap=us dmraid=false url=tftp://${COBBLER_SERVER}/{{ dn_cdrom }}/./preseed.cfg tftphost=${COBBLER_SERVER} fpbxrepo=test spicelevel=int auto=true interface=auto priority=critical"
+{% else %}
+# On SNG7:
+cobbler profile add --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-SERIAL --distro={{ str_cob_base }}-x86_64 --kickstart='' --kopts="locale=en_US language=en country=US keymap=us dmraid=false url=tftp://${COBBLER_SERVER}/{{ dn_cdrom }}/./preseed.cfg tftphost=${COBBLER_SERVER} fpbxrepo=prod console=tty0 console=ttyS0,115200n8 spicelevel=int auto=true interface=auto priority=critical"
+cobbler profile add --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-SERIAL-TEST --distro={{ str_cob_base }}-x86_64 --kickstart='' --kopts="locale=en_US language=en country=US keymap=us dmraid=false url=tftp://${COBBLER_SERVER}/{{ dn_cdrom }}/./preseed.cfg tftphost=${COBBLER_SERVER} fpbxrepo=test console=tty0 console=ttyS0,115200n8 spicelevel=int auto=true interface=auto priority=critical"
+cobbler profile add --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-MONITOR --distro={{ str_cob_base }}-x86_64 --kickstart='' --kopts="locale=en_US language=en country=US keymap=us dmraid=false url=tftp://${COBBLER_SERVER}/{{ dn_cdrom }}/./preseed.cfg tftphost=${COBBLER_SERVER} fpbxrepo=prod spicelevel=int auto=true interface=auto priority=critical"
+cobbler profile add --name={{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-MONITOR-TEST --distro={{ str_cob_base }}-x86_64 --kickstart='' --kopts="locale=en_US language=en country=US keymap=us dmraid=false url=tftp://${COBBLER_SERVER}/{{ dn_cdrom }}/./preseed.cfg tftphost=${COBBLER_SERVER} fpbxrepo=test spicelevel=int auto=true interface=auto priority=critical"
+{% endif %}
+
+# Remove no longer used x86_64 profile.
+cobbler profile remove --name={{ str_cob_base }}-x86_64
+
+# Remove gtk and xen profiles.
+cobbler profile remove --name={{ str_cob_base }}-gtk-x86_64
+cobbler profile remove --name={{ str_cob_base }}-xen-x86_64
+cobbler distro remove --name={{ str_cob_base }}-gtk-x86_64
+cobbler distro remove --name={{ str_cob_base }}-xen-x86_64
+cobbler repo remove --name={{ str_cob_base }}-gtk-x86_64
+cobbler repo remove --name={{ str_cob_base }}-xen-x86_64
+
+# Synchronize cobbler changes.
+cobbler sync
+
+#####################
+
+{% if item.pxe_cob_distro == "ROCKY9" %}
+# If using SNG7, more steps needed.
+# Actually, you can't do it alone -- you'll need to run all of the above on Rocky9.
+# THEN, run this on Rocky9 *BEFORE SNG7*:
+rm -f /tmp/{{ str_iso_out_base }}-GRUB-FROM-ROCKY9.tgz
+tar czf /tmp/{{ str_iso_out_base }}-GRUB-FROM-ROCKY9.tgz -C ${TFTP_DIR} grub
+{% else %}
+# Finally on SNG7 *AFTER ROCKY9*:
+tar xzf /tmp/{{ str_iso_out_base }}-GRUB-FROM-ROCKY9.tgz
+{% endif %}
+

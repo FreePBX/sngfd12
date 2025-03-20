@@ -1,0 +1,18 @@
+# Substitute ROCKY9 and SNG7 for the names of your hosts.
+
+export ROCKY9=
+export SNG7=
+
+scp {{ str_iso_out_base }}* $ROCKY9:/tmp
+
+ssh $ROCKY9
+# On ROCKY9:
+sudo sh /tmp/{{ str_iso_out_base }}-RUN-ON-PXE-COBBLER-ROCKY9.sh
+
+# On controller (after ROCKY9):
+scp $ROCKY9:/tmp/{{ str_iso_out_base }}-GRUB-FROM-ROCKY9.tgz .
+scp {{ str_iso_out_base }}* $SNG7:/tmp
+
+ssh $SNG7
+# On SNG7:
+sudo sh /tmp/{{ str_iso_out_base }}-RUN-ON-PXE-COBBLER-SNG7.sh

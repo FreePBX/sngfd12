@@ -37,6 +37,9 @@ fi
 if [ $spicelevel == "fog" ]; then
 	shell_sng_opts=""
 fi
+if [ $fpbxrepo == "test" ] ; then
+	shell_sng_opts="${shell_sng_opts} --testing"
+fi
 
 # systemd oneshot for automatically installing on next reboot
 cat << EOFO > /target/usr/lib/systemd/system/sng-install-freepbx.service

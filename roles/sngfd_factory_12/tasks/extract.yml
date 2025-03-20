@@ -21,6 +21,22 @@
     - { in: ".disk/info",                     out: "{{ dextract.path }}/diskinfo" }
     - { in: "pool/main/l/linux-signed-amd64", out: "{{ dextract.path }}/linux-signed-amd64" }
 
+- name: Extracting files from mini ISO if any.
+  when: fn_mini_iso_input != ""
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/xorriso
+      - -osirrox
+      -   "on"
+      - -indev
+      -   "{{ fn_mini_iso_input }}"
+      - -extract
+      -   "{{ item.in }}"
+      -   "{{ item.out }}"
+  loop:
+    - { in: "initrd.gz",                     out: "{{ dextractmini.path }}/initrd.gz" }
+    - { in: "linux",                         out: "{{ dextractmini.path }}/vmlinuz" }
+
 - name: Make some of the extracted files writable.
   ansible.builtin.file:
     path: "{{ item.out }}"

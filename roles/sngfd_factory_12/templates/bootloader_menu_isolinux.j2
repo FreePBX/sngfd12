@@ -24,7 +24,7 @@ menu begin spice{{ spice|lower }}
 		label autofpbx{{ spice|lower }}
 			menu label ^YES WIPE MY DISKS AND INSTALL "{{ spice }}"
 			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+			append spicelevel={{ spice|lower }} fpbxrepo=prod initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
 			text help
 
 
@@ -37,7 +37,33 @@ menu begin spice{{ spice|lower }}
 		label autofpbxserial{{ spice|lower }}
 			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^SERIAL)
 			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+			append spicelevel={{ spice|lower }} fpbxrepo=prod initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+			text help
+
+
+	WARNING: The installer will wipe all your disks automatically.
+	MINIMUM DISK SIZE: 30G PUB or FOG // 100G RAID1
+	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
+	This option will send and receive control on the serial port.
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+			endtext
+		label autofpbxtest{{ spice|lower }}
+			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^TEST)
+			kernel /install.amd/vmlinuz
+			append spicelevel={{ spice|lower }} fpbxrepo=test initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+			text help
+
+
+	WARNING: The installer will wipe all your disks automatically.
+	MINIMUM DISK SIZE: 30G PUB or FOG // 100G RAID1
+	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
+
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+			endtext
+		label autofpbxtestserial{{ spice|lower }}
+			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (SERIAL T^EST)
+			kernel /install.amd/vmlinuz
+			append spicelevel={{ spice|lower }} fpbxrepo=test initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
 			text help
 
 
@@ -72,7 +98,7 @@ menu begin spice{{ spice|lower }}
 		label autofpbx{{ spice|lower }}
 			menu label ^YES WIPE MY DISKS AND INSTALL "{{ spice }}"
 			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+			append spicelevel={{ spice|lower }} fpbxrepo=prod initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
 			text help
 
 
@@ -85,7 +111,33 @@ menu begin spice{{ spice|lower }}
 		label autofpbxserial{{ spice|lower }}
 			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^SERIAL)
 			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+			append spicelevel={{ spice|lower }} fpbxrepo=prod initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+			text help
+
+
+	WARNING: The installer will wipe all your disks automatically.
+	MINIMUM DISK SIZE: 30G OSO / 40G UPG / 90G INT // 100G RAID1
+	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
+	This option will send and receive control on the serial port.
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+			endtext
+		label autofpbxtest{{ spice|lower }}
+			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^TEST)
+			kernel /install.amd/vmlinuz
+			append spicelevel={{ spice|lower }} fpbxrepo=test initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+			text help
+
+
+	WARNING: The installer will wipe all your disks automatically.
+	MINIMUM DISK SIZE: 30G OSO / 40G UPG / 90G INT // 100G RAID1
+	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
+
+	Version: {{ str_script_version }}    Build: {{ str_script_build }}
+			endtext
+		label autofpbxtestserial{{ spice|lower }}
+			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (T^EST SERIAL)
+			kernel /install.amd/vmlinuz
+			append spicelevel={{ spice|lower }} fpbxrepo=test initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
 			text help
 
 

@@ -15,7 +15,7 @@
 - name: Get some static text files in place.
   ansible.builtin.copy:
     src: "{{ item }}"
-    dest: "{{ dtmp.path }}"
+    dest: "{{ dcdrom.path }}"
   loop:
     - README.txt
     - WARNING.txt
