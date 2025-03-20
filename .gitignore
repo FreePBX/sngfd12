@@ -1,1 +1,4 @@
 *.iso
+*.gz
+*.tar
+*-RUN-ON-PXE-COBBLER-*

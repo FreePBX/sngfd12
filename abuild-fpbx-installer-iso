@@ -9,9 +9,15 @@
 
 usage() {
 	echo "
-Usage: $0 -i debian_input.iso
+Minimal Usage: $0 -i debian_input.iso
 
-Example: $0 -i /path/to/debian-12.8.0-amd64-netinst.iso
+Options:
+	-i	Path to input ISO file.
+	-p	Path to mini input ISO for network installs with PXE and Cobbler.
+
+Examples:
+	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso
+	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso -p /path/to/mini-debian.iso
 
 You can change more options by setting Ansible variables on a per host or group basis.
 This shell script is a simple wrapper around ansible-playbook to run on your localhost.
@@ -20,10 +26,13 @@ Please see README.md for more information.
 	exit 1
 }
 
-while getopts ":i:" opt; do
+while getopts ":i:p:" opt; do
 	case "${opt}" in
 		i)
 			fn_iso_input=${OPTARG}
+			;;
+		p)
+			fn_mini_iso_input=${OPTARG}
 			;;
 		*)
 			usage
@@ -39,6 +48,6 @@ fi
 ansible-playbook \
 	--inventory localhost, \
 	--connection=local \
-	--extra-vars "fn_iso_input=${fn_iso_input}" \
+	--extra-vars "fn_iso_input=${fn_iso_input} fn_mini_iso_input=${fn_mini_iso_input}" \
 	default-playbook.yml
 

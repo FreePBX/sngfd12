@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
+#
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/pxecob.yml
+
+# Description: Sets up PXE boot with Cobbler over the network for faster warehouse factory installs vs. USB stick.
+
+- name: Try to copy an existing Debian installer netboot initrd.
+  ignore_errors: true
+  ansible.builtin.copy:
+    src: "{{ dextractmini.path }}/initrd.gz"
+    dest: "{{ dcdrom.path }}/initrd.gz"
+
+- name: Check if the initrd was copied.
+  ansible.builtin.stat:
+    path: "{{ dcdrom.path }}/initrd.gz"
+  register: initrdgz
+
+- name: Copy preseed.cfg into sample.seed
+  when: initrdgz.stat.exists
+  ansible.builtin.copy:
+    src: "{{ dcdrom.path }}/preseed.cfg"
+    dest: "{{ dcdrom.path }}/sample.seed"
+
+- name: Generate PXE tarball.
+  when: initrdgz.stat.exists
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/tar
+      - -c
+      - -f
+      - "{{ str_iso_out_base }}-PXE.tar"
+      - -C
+      - "{{ dtmp.path }}"
+      - "{{ dn_cdrom }}"
+
+- name: Shell commands to execute on host for using PXE tarball with Cobbler.
+  when: initrdgz.stat.exists
+  ansible.builtin.template:
+    src: run_on_pxe_cobbler_servers.j2
+    dest: "{{ str_iso_out_base }}-RUN-ON-PXE-COBBLER-{{ item.pxe_cob_distro }}.sh"
+  loop:
+    - { pxe_cob_distro: "ROCKY9" }
+    - { pxe_cob_distro: "SNG7" }
+
+- name: Shell command instructions for controller.
+  when: initrdgz.stat.exists
+  ansible.builtin.template:
+    src: run_on_pxe_cobbler_controller.j2
+    dest: "{{ str_iso_out_base }}-RUN-ON-PXE-COBBLER-CONTROLLER-README.txt"

@@ -39,22 +39,30 @@ set color_normal=white/black
 set color_highlight=yellow/black
 set background_color=black
 submenu --hotkey=b 'Basic FreePBX {{ str_freepbx_version }} install {{ str_script_version }}' {
-    menuentry --hotkey=e '(Press Escape to go Back)' {
+    menuentry --hotkey=p '(Press Escape to go Back)' {
         echo ""
     }
 {% set localized = "" %}
 {% for spice in ["PUB", "FOG"] %}
 {% if spice == "UPG" or spice == "INT" %}{% set localized = "locale=en_US language=en country=US keymap=us" %}{% endif %}
     submenu --hotkey={{ spice|lower|first }} 'Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" install {{ str_script_version }}' {
-        menuentry --hotkey=e '(Press Escape to go Back)' {
+        menuentry --hotkey=p '(Press Escape to go Back)' {
             echo ""
         }
         menuentry --hotkey=y 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}"' {
-            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
             initrd   /install.amd/initrd.gz
         }
         menuentry --hotkey=s 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (SERIAL)' {
-            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+            initrd   /install.amd/initrd.gz
+        }
+        menuentry --hotkey=t 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST)' {
+            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+            initrd   /install.amd/initrd.gz
+        }
+        menuentry --hotkey=e 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST SERIAL)' {
+            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
             initrd   /install.amd/initrd.gz
         }
     }
@@ -85,22 +93,30 @@ submenu --hotkey=b 'Basic FreePBX {{ str_freepbx_version }} install {{ str_scrip
     }
 }
 submenu --hotkey=a 'Advanced FreePBX {{ str_freepbx_version }} install {{ str_script_version }}' {
-    menuentry --hotkey=e '(Press Escape to go Back)' {
+    menuentry --hotkey=p '(Press Escape to go Back)' {
         echo ""
     }
 {% set localized = "" %}
 {% for spice in ["OSO", "UPG", "INT"] %}
 {% if spice == "UPG" or spice == "INT" %}{% set localized = "locale=en_US language=en country=US keymap=us" %}{% endif %}
     submenu --hotkey={{ spice|lower|first }} 'Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" install {{ str_script_version }}' {
-        menuentry --hotkey=e '(Press Escape to go Back)' {
+        menuentry --hotkey=p '(Press Escape to go Back)' {
             echo ""
         }
         menuentry --hotkey=y 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}"' {
-            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
             initrd   /install.amd/initrd.gz
         }
         menuentry --hotkey=s 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (SERIAL)' {
-            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
+            initrd   /install.amd/initrd.gz
+        }
+        menuentry --hotkey=t 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST)' {
+            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
+            initrd   /install.amd/initrd.gz
+        }
+        menuentry --hotkey=e 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST SERIAL)' {
+            linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
             initrd   /install.amd/initrd.gz
         }
     }
