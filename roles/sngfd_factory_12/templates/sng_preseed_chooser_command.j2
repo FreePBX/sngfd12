@@ -55,7 +55,7 @@ if $raid; then
                 	 else if ($disk_size > 250 && $disk_size <= 500) print 2;
                 	 else print 3;
                		 }'")
-           	if [ "$result" -eq 1 ]; then
+           	if [ "$result" -eq 1 ] || [ "$disk_part" = "" ]; then
                 	echo "preseed_partman_recipe_raid_${spicelevel}_250.cfg"
                 	logger -t sng "CHOSE preseed_partman_recipe_raid_${spicelevel}_250.cfg"
         	elif [ "$result" -eq 2 ]; then
@@ -89,7 +89,7 @@ else
           		       if ($disk_size <= 120) print 1;
                 	       else print 2;
                 	       }'")
-        	if [ "$result" -eq 1 ]; then
+        	if [ "$result" -eq 1 ] || [ "$disk_part" = "" ]; then
                 	echo "preseed_partman_recipe_nonraid_${spicelevel}_120.cfg"
                 	logger -t sng "CHOSE preseed_partman_recipe_nonraid_${spicelevel}_120.cfg"
         	else
