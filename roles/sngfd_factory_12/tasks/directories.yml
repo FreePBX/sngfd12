@@ -27,3 +27,9 @@
     path: "{{ dtmp.path }}/extract"
     state: directory
   register: dextract
+
+- name: Prepare temporary mini ISO extraction directory.
+  ansible.builtin.file:
+    path: "{{ dextract.path }}/{{ dn_mini }}"
+    state: directory
+  register: dextractmini

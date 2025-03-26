@@ -42,6 +42,11 @@
   ansible.builtin.include_tasks:
     file: output.yml
 
+- name: Generate PXE boot setup for Cobbler.
+  when: fn_mini_iso_input != ""
+  ansible.builtin.include_tasks:
+    file: pxecob.yml
+
 #- name: test
 #  ansible.builtin.debug:
 #    msg: "testing"

@@ -7,12 +7,12 @@
 - name: Initial preseed.cfg
   ansible.builtin.template:
     src: preseed.j2
-    dest: "{{ dtmp.path }}/preseed.cfg"
+    dest: "{{ dcdrom.path }}/preseed.cfg"
 
 - name: Spicy preseed_spice_....cfg
   ansible.builtin.template:
     src: preseed_spice.j2
-    dest: "{{ dtmp.path }}/preseed_spice_{{ item.spice }}.cfg"
+    dest: "{{ dcdrom.path }}/preseed_spice_{{ item.spice }}.cfg"
   loop:
     - { stage: "early",           spice: "pub", passbytes: "{{ int_passbytes_pub }}" }
     - { stage: "early",           spice: "oso", passbytes: "{{ int_passbytes_oso }}" }
@@ -20,10 +20,10 @@
     - { stage: "early",           spice: "upg", passbytes: "{{ int_passbytes_upg }}" }
     - { stage: "early",           spice: "int", passbytes: "{{ int_passbytes_int }}" }
 
-- name: Non-disk type specifi partman related preseeds.
+- name: Non-disk type specific partman related preseeds.
   ansible.builtin.template:
     src: "{{ item }}.j2"
-    dest: "{{ dtmp.path }}/{{ item }}.cfg"
+    dest: "{{ dcdrom.path }}/{{ item }}.cfg"
   loop:
     - preseed_partman_start
     - preseed_partman_crypto
@@ -34,7 +34,7 @@
 - name: Unique partman disk types for non-RAID.
   ansible.builtin.template:
     src: preseed_partman_nonraid_disk.j2
-    dest: "{{ dtmp.path }}/preseed_partman_nonraid_disk_{{ item.disk_type }}.cfg"
+    dest: "{{ dcdrom.path }}/preseed_partman_nonraid_disk_{{ item.disk_type }}.cfg"
   loop:
     - { disk_type: "s" }
     - { disk_type: "v" }
@@ -43,7 +43,7 @@
 - name: Unique partman disk types for RAID.
   ansible.builtin.template:
     src: preseed_partman_raid_disk.j2
-    dest: "{{ dtmp.path }}/preseed_partman_raid_disk_{{ item.disk_type }}.cfg"
+    dest: "{{ dcdrom.path }}/preseed_partman_raid_disk_{{ item.disk_type }}.cfg"
   loop:
     - { disk_type: "s" }
     - { disk_type: "v" }
@@ -51,7 +51,7 @@
 
 - name: Physical disks are very "s"pecial - force GPT to help with UEFI (non-RAID).
   ansible.builtin.lineinfile:
-    path: "{{ dtmp.path }}/preseed_partman_nonraid_disk_s.cfg"
+    path: "{{ dcdrom.path }}/preseed_partman_nonraid_disk_s.cfg"
     line: "{{ item }}"
   loop:
     - "d-i partman-partitioning/choose_label select gpt"
@@ -59,7 +59,7 @@
 
 - name: Physical disks are very "s"pecial - force GPT to help with UEFI (RAID).
   ansible.builtin.lineinfile:
-    path: "{{ dtmp.path }}/preseed_partman_raid_disk_s.cfg"
+    path: "{{ dcdrom.path }}/preseed_partman_raid_disk_s.cfg"
     line: "{{ item }}"
   loop:
     - "d-i partman-partitioning/choose_label select gpt"
@@ -68,7 +68,7 @@
 - name: Unique partman recipes for partitioning.
   ansible.builtin.template:
     src: preseed_partman_recipe.j2
-    dest: "{{ dtmp.path }}/preseed_partman_recipe_{{ item.raid }}_{{ item.spice }}.cfg"
+    dest: "{{ dcdrom.path }}/preseed_partman_recipe_{{ item.raid }}_{{ item.spice }}.cfg"
   loop:
     - { raid: "raid",     spice: pub, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
     - { raid: "nonraid",  spice: pub, swapmin: "{{ int_mb_swap_min }}",       swapmax: "{{ int_mb_swap_max }}" }
@@ -82,7 +82,7 @@
 - name: Unique Partman Recipes for INT Spice Level.
   ansible.builtin.template:
     src: preseed_partman_recipe.j2
-    dest: "{{ dtmp.path }}/preseed_partman_recipe_{{ item.raid }}_{{ item.spice }}_{{ item.size }}.cfg"
+    dest: "{{ dcdrom.path }}/preseed_partman_recipe_{{ item.raid }}_{{ item.spice }}_{{ item.size }}.cfg"
   loop:
     - { raid: "raid",     spice: int, swapmin: "{{ int_mb_swap_warehouse }}",       swapmax: "{{ int_mb_swap_warehouse }}",   root_partition_size: "{{ root_partition_size_250GB  }}",  size: "250" }
     - { raid: "raid",     spice: int, swapmin: "{{ int_mb_swap_warehouse }}",       swapmax: "{{ int_mb_swap_warehouse }}",   root_partition_size: "{{ root_partition_size_500GB  }}",  size: "500" }

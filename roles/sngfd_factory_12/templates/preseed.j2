@@ -141,6 +141,11 @@ d-i netcfg/get_hostname string {{ str_host_name }}
 d-i partman/early_command string \
 	mkdir -p /cdrom; \
 	tftp -g -l /cdrom/sng_early_partman_all_command -r /{{ dn_cdrom }}/sng_early_partman_all_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_early_pub_command -r /{{ dn_cdrom }}/sng_early_pub_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_early_oso_command -r /{{ dn_cdrom }}/sng_early_oso_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_early_fog_command -r /{{ dn_cdrom }}/sng_early_fog_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_early_upg_command -r /{{ dn_cdrom }}/sng_early_upg_command ${tftphost}; \
+	tftp -g -l /cdrom/sng_early_int_command -r /{{ dn_cdrom }}/sng_early_int_command ${tftphost}; \
 	tftp -g -l /cdrom/sng_late_all_command -r /{{ dn_cdrom }}/sng_late_all_command ${tftphost}; \
 	tftp -g -l /cdrom/sng_late_pub_command -r /{{ dn_cdrom }}/sng_late_pub_command ${tftphost}; \
 	tftp -g -l /cdrom/sng_late_oso_command -r /{{ dn_cdrom }}/sng_late_oso_command ${tftphost}; \

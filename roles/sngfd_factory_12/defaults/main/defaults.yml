@@ -14,27 +14,34 @@ str_freepbx_version: "17"
 str_vendor: "Sangoma"
 str_vendor_url: "https://www.sangoma.com/"
 str_our_full_name: "Sangoma FreePBX Distro"
-str_our_short_cap_name: "SNGFD"
+str_our_short_cap_name: "SNGDEB"
 
 # Support Debian 12 bookworm
 str_deb_codename: "bookworm"
 str_deb_version: "12"
 
-# Script versioning
-str_script_minor: "1.3-BETA"
-str_script_build: "2025-02-21.1"
+# Script versioning - CHANGE THESE TWO WHEN MAKING A NEW ISO
+str_script_minor: "10.0"
+str_script_bump: "2"
+
+# Architecture
+str_arch: "amd64"
 
 # Computed values
+str_script_build: "{{ '%y%m' | strftime }}.{{ str_script_bump }}"
 str_script_codename: "{{ str_deb_codename }}"
 str_script_major: "{{ str_deb_version }}"
-str_script_version: "{{ str_script_major }}.{{ str_script_minor }}"
+str_script_version: "{{ str_script_major }}.{{ str_script_minor }}.{{ str_script_build }}"
 str_script_version_underscore: "{{ str_script_version | regex_replace('\\.|-', '_') }}"
 str_script_version_hyphen: "{{ str_script_version | regex_replace('\\.', '-') }}"
 str_script_name: "sngfd_factory_12"
 str_script_sha512sum: "TBD"
 
 # Computed first part of the name of the output iso file
-str_iso_out_base: "{{ str_our_short_cap_name }}-{{ str_script_version_hyphen }}"
+str_iso_out_base: "{{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-{{ str_arch|lower }}-{{ str_script_version_hyphen }}"
+
+# Cobbler does not like the arch name. :-/
+str_cob_base: "{{ str_our_short_cap_name }}-PBX{{ str_freepbx_version }}-{{ str_script_version_hyphen }}"
 
 # Now some variables that might get overwritten by command line options...
 
@@ -123,6 +130,7 @@ int_lvm_guided_size: 50
 # Minimum: 1
 int_mb_ssd_wear: 10240
 
+# These minimums only affect INT spice level.
 root_partition_size_120GB: 24576 
 root_partition_size_250GB: 51200
 root_partition_size_500GB: 102400
@@ -192,6 +200,7 @@ fn_netboot_initrd: ""
 
 # Must be supplied on command line
 #fn_iso_input: "debian-12.8.0-amd64-netinst.iso"
+#fn_mini_iso_input: "debian-12.8.0-amd64-mini.iso"
 
 # Used to depend on DIY and SPICE... back in the legacy shell days...
 fn_iso_output: "{{ str_iso_out_base }}.iso"
@@ -202,5 +211,7 @@ cpeid: "cpe:2.3:o:{{ str_vendor }}:{{ str_our_short_cap_name }}:{{ str_freepbx_v
 # New items only in the ansible version...
 
 # CDROM directory name.
-dn_cdrom: "cdrom-{{ str_our_short_cap_name|lower }}-{{ str_script_version_hyphen|lower }}"
+dn_cdrom: "cdrom-{{ str_iso_out_base|lower }}"
 
+# MINI ISO directory name.
+dn_mini: "mini-{{ str_iso_out_base|lower }}"
