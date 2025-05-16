@@ -53,6 +53,26 @@ $ wget -O bookworm-netboot-initrd.gz https://ftp.debian.org/debian/dists/stable/
 4. Minimum disk size when virtual is appx 30G without further adjustments to script defaults eg. see int_lvm_guided_size
 5. Minimum disk size when physical via USB install is appx 120G as less than that is treated as a USB stick.
 
+## SNG 7 instructions if you already have Cobbler 2.8 running
+Note that you may need to copy over additional RPMs to complete the first `yum install` below.
+
+```bash
+yum install grub2 grub2-efi-x64-modules grub2-tools grub2-common grub2-pc grub2-tools-extra grub2-efi-x64 grub2-pc-modules grub2-tools-minimal
+wget https://cobbler.github.io/signatures/2.8.x/latest.json
+patch -p0 < legacy/bookworm-patch-cobbler-2.8.latest.json.diff
+cp latest.json /var/www/html
+chmod 755 /var/www/html/latest.json
+echo "signature_url: http://localhost/latest.json" >> /etc/cobbler/settings
+systemctl restart cobblerd
+sleep 10
+cobbler signature update
+sh legacy/mkloaders.sh
+```
+
+...then run each time a new ISO is ready something like the following:
+
+`sh SNGDEB-PBX17-amd64-12-10-0-2503-2-RUN-ON-PXE-COBBLER-SNG7.sh 192.0.2.42`
+
 ## WARNINGS
 **This ISO strives for Fully Automated Installation (FAI)**
 **and you will lose all existing data on any system you boot with it.**
