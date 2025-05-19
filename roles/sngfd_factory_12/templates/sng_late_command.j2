@@ -178,17 +178,17 @@ cat << EOFJ > /target/usr/local/sbin/sng-eol
 #!/bin/sh
 {% include 'header.j2' %}
 
-# change the default passwords to the MAC address
-macpass=\$(/usr/sbin/fwconsole sa info | grep -m 1 "Machine ID:" | sed 's/Machine ID://' | tr -d '[:blank:]')
+# change the default passwords to the MAC address - upper case without colons
+macpass=\$(/usr/sbin/fwconsole sa info | grep -m 1 "Machine ID:" | sed 's/Machine ID://' | tr -d '[:blank:]' | sed 's/://g')
 macpasslength=\$(echo -n \$macpass | wc -m | tr -d '[:blank:]')
-if [ \$macpasslength != 17 ]; then
-	macpass=\$(ip -br link | grep -m 1 -v LOOPBACK | awk '{print \$3}' | tr '[:lower:]' '[:upper:]')
+if [ \$macpasslength != 12 ]; then
+	macpass=\$(ip -br link | grep -m 1 -v LOOPBACK | awk '{print \$3}' | tr '[:lower:]' '[:upper:]' | sed 's/://g')
 	macpasslength=\$(echo -n \$macpass | wc -m | tr -d '[:blank:]')
-	if [ \$macpasslength != 17 ]; then
+	if [ \$macpasslength != 12 ]; then
 		echo "Could not change passwords. Is this deployment active ?  Check 'fwconsole sa i'."
 	fi
 fi
-if [ \$macpasslength = 17 ]; then
+if [ \$macpasslength = 12 ]; then
 	echo "root:\$macpass" | /sbin/chpasswd
 	echo "{{ str_whoami }}:\$macpass" | /sbin/chpasswd
 	echo "Default passwords for 'root' and '{{ str_whoami }}' CLI users changed to: \$macpass"
