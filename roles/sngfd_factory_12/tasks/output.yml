@@ -140,6 +140,8 @@
 
 - name: Run xorriso to generate ISO output.
   ignore_errors: true
+  environment:
+    SOURCE_DATE_EPOCH: "{{ str_script_source_date_epoch }}"
   ansible.builtin.command:
     argv:
       - /usr/bin/xorriso
@@ -426,6 +428,11 @@
       - --
       - -volid
       -   "{{ str_our_short_cap_name }}_{{ str_script_version_underscore }}_{{ str_spice }}{{ str_diy }}"
+      - alter_date_r
+      -   b
+      -   "{{ str_script_source_date_epoch }}"
+      -   /
+      - --
       - -md5
       -   all
       - -boot_image

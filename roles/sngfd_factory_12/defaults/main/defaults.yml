@@ -18,17 +18,34 @@ str_our_short_cap_name: "SNGDEB"
 
 # Support Debian 12 bookworm
 str_deb_codename: "bookworm"
-str_deb_version: "12"
+#str_deb_version: "12"
 
-# Script versioning - CHANGE THESE TWO WHEN MAKING A NEW ISO
-str_script_minor: "10.0"
-str_script_bump: "2"
+# Must be supplied on command line
+#fn_iso_input: "debian-12.8.0-amd64-netinst.iso"
+#fn_mini_iso_input: "debian-12.8.0-amd64-mini.iso"
+fn_mini_iso_input: ""
+
+# Assuming input ISO follows customary naming convention
+list_iso_input: "{{ fn_iso_input | split('-') }}"
+str_deb_version_full: "{{ list_iso_input[1] }}"
+list_deb_version_full: "{{ str_deb_version_full | split('.') }}"
+str_deb_version: "{{ list_deb_version_full[0] }}"
+str_deb_version_minor: "{{ list_deb_version_full[1] }}.{{ list_deb_version_full[2] }}"
+
+# Script versioning
+#str_script_minor: "10.0"
+str_script_minor: "{{ str_deb_version_minor }}"
+
+# Bumping version mostly controlled from command line
+str_script_bump: "1"
 
 # Architecture
 str_arch: "amd64"
 
 # Computed values
 str_script_build: "{{ '%y%m' | strftime }}.{{ str_script_bump }}"
+str_script_build_fakedate: "20{{ str_script_build | split('.') | first }}{{ str_script_build | split('.') | last | regex_replace('^([1-9])$','0\\1') }}123456"
+str_script_source_date_epoch: "{{ (str_script_build_fakedate | to_datetime('%Y%m%d%H%M%S')).strftime('%s') }}"
 str_script_codename: "{{ str_deb_codename }}"
 str_script_major: "{{ str_deb_version }}"
 str_script_version: "{{ str_script_major }}.{{ str_script_minor }}.{{ str_script_build }}"
@@ -197,10 +214,6 @@ dir_archives: ""
 # Sensible default
 fn_netboot_initrd: ""
 #fn_netboot_initrd: "{{ str_script_codename }}-netboot-initrd.gz"
-
-# Must be supplied on command line
-#fn_iso_input: "debian-12.8.0-amd64-netinst.iso"
-#fn_mini_iso_input: "debian-12.8.0-amd64-mini.iso"
 
 # Used to depend on DIY and SPICE... back in the legacy shell days...
 fn_iso_output: "{{ str_iso_out_base }}.iso"

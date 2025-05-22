@@ -11,13 +11,17 @@ usage() {
 	echo "
 Minimal Usage: $0 -i debian_input.iso
 
-Options:
+Required:
 	-i	Path to input ISO file.
+
+Optional:
+	-b	Build version - defaults to yymm.1 eg. 2504.1 (where .1 is the bump)
 	-p	Path to mini input ISO for network installs with PXE and Cobbler.
 
 Examples:
 	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso
 	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso -p /path/to/mini-debian.iso
+	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso -p /path/to/mini-debian.iso -b 2504.3
 
 You can change more options by setting Ansible variables on a per host or group basis.
 This shell script is a simple wrapper around ansible-playbook to run on your localhost.
@@ -26,8 +30,11 @@ Please see README.md for more information.
 	exit 1
 }
 
-while getopts ":i:p:" opt; do
+while getopts ":i:pb:" opt; do
 	case "${opt}" in
+		b)
+			str_script_build=${OPTARG}
+			;;
 		i)
 			fn_iso_input=${OPTARG}
 			;;
@@ -45,9 +52,19 @@ if [ -z "${fn_iso_input}" ]; then
 	usage
 fi
 
+extra_vars="fn_iso_input=${fn_iso_input}"
+
+if [ -n "${fn_mini_iso_input}" ]; then
+	extra_vars="${extra_vars} fn_mini_iso_input=${fn_mini_iso_input}"
+fi
+
+if [ -n "${str_script_build}" ]; then
+	extra_vars="${extra_vars} str_script_build=${str_script_build}"
+fi
+
 ansible-playbook \
 	--inventory localhost, \
 	--connection=local \
-	--extra-vars "fn_iso_input=${fn_iso_input} fn_mini_iso_input=${fn_mini_iso_input}" \
+	--extra-vars "${extra_vars}" \
 	default-playbook.yml
 
