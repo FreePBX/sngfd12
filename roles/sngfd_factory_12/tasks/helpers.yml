@@ -19,4 +19,10 @@
   loop:
     - README.txt
     - WARNING.txt
+
+- name: The EULA contains the distro version number so it is templated.
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "{{ dcdrom.path }}/{{ item }}"
+  loop:
     - EULA.txt
