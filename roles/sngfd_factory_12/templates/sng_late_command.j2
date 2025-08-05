@@ -61,7 +61,7 @@ ExecStartPre=/usr/bin/sleep 15
 # make sure we have solid network connectivity before attempting to run the installer
 ExecStartPre=/usr/bin/bash -c 'while ! ping -c 1 github.com >/dev/null 2>&1; do echo "Network not reachable, retrying in 5 seconds..."; sleep 5; systemctl restart networking; done'
 # actually run the installer, with DAHDI drivers
-ExecStart=/usr/bin/bash /var/tmp/sng_freepbx_debian_install.sh ${shell_sng_opts}
+ExecStart=/usr/bin/env ASTVERSION=${asteriskversion} /usr/bin/bash /var/tmp/sng_freepbx_debian_install.sh ${shell_sng_opts}
 # if not successful, then get ready to reboot and try again
 ExecStartPost=-/bin/sh -c 'latest_log=$\$(ls -t /var/log/pbx/*.log | head -1); grep -q "Finished FreePBX 17 installation process" \$latest_log'
 # if successful, only then will next command run to prevent reinstall on next boot
