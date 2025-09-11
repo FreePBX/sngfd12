@@ -30,7 +30,7 @@ Please see README.md for more information.
 	exit 1
 }
 
-while getopts ":i:pb:" opt; do
+while getopts ":i:p:b:" opt; do
 	case "${opt}" in
 		b)
 			str_script_build=${OPTARG}
