@@ -22,8 +22,8 @@
 #                                               FreePBX 17                          #
 #####################################################################################
 set -e
-SCRIPTVER="1.14"
-ASTVERSION=21
+SCRIPTVER="1.15"
+ASTVERSION=22
 PHPVERSION="8.2"
 LOG_FOLDER="/var/log/pbx"
 LOG_FILE="${LOG_FOLDER}/freepbx17-install-$(date '+%Y.%m.%d-%H.%M.%S').log"
@@ -31,6 +31,33 @@ log=$LOG_FILE
 SANE_PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 DEBIAN_MIRROR="http://ftp.debian.org/debian"
 NPM_MIRROR=""
+DEBIAN_OS_VERSION=""
+
+if [ -f /etc/os-release ]; then
+    DEBIAN_OS_VERSION=$(grep -oP '(?<=VERSION_CODENAME=).*' /etc/os-release)
+fi
+
+# Fallback to checking /etc/debian_version numerically
+if [ -z "$DEBIAN_OS_VERSION" ] && [ -f /etc/debian_version ]; then
+    case "$(cat /etc/debian_version)" in
+        12*|bookworm)
+            DEBIAN_OS_VERSION="bookworm"
+            ;;
+        13*|trixie)
+            DEBIAN_OS_VERSION="trixie"
+            ;;
+        *)
+            DEBIAN_OS_VERSION="unknown"
+            ;;
+    esac
+fi
+
+# Only allow Debian 12 (bookworm)
+if [ "$DEBIAN_OS_VERSION" != "bookworm" ]; then
+    echo "Unsupported OS version. This script supports only Debian 12 (bookworm). Detected: $DEBIAN_OS_VERSION"
+    exit 1
+fi
+
 
 # Check for root privileges
 if [[ $EUID -ne 0 ]]; then
@@ -46,6 +73,10 @@ while [[ $# -gt 0 ]]; do
 	case $1 in
 		--dev)
 			dev=true
+			shift # past argument
+			;;
+		--disable-deb-update-v13)
+			disableDebUpdateToV13=true
 			shift # past argument
 			;;
 		--testing)
@@ -106,9 +137,52 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
+
+block_debian13_trixie_update() {
+	cat >/etc/apt/preferences.d/99-block-trixie.pref <<'EOF'
+# Block Debian 13 Trixie
+Package: *
+Pin: release n=trixie
+Pin-Priority: -1
+
+EOF
+}
+
+fix_debian12_repo() {
+
+	# --- Fix sources.list files to use bookworm ---
+	for file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+		[ -f "$file" ] || continue
+		# Replace "stable" with "bookworm"
+		if grep -qE "deb\s+$DEBIAN_MIRROR\s+stable\b" "$file"; then
+			sed -i.bak -E "s|(deb\s+$DEBIAN_MIRROR\s+)stable\b|\1bookworm|g" "$file"
+		fi
+
+	    # Replace "stable-security" with "bookworm-security"
+	    if grep -qE "deb\s+http://security\.debian\.org/debian-security\s+stable-security\b" "$file"; then
+		    sed -i.bak -E "s|(deb\s+http://security\.debian\.org/debian-security\s+)stable-security\b|\1bookworm-security|g" "$file"
+	    fi
+    done
+}
+
+
+if [ -n "$disableDebUpdateToV13" ]; then
+	    # Fix current debian repo to point to bookworm
+	    fix_debian12_repo
+	    # Block Debian 13/Trixie update because currently FreePBX only supports Debian 12/Bookworm 
+	    block_debian13_trixie_update
+	    echo "Debian repositories have been updated to use the Bookworm (Debian 12) sources."
+	    echo "The script is exiting now because the '--disable-deb-update-v13' option was used."
+	    echo "This option is intended only for updating the APT sources without proceeding with a full installation."
+	    echo "To run the full installation, please re-run the script **without** the '--disable-deb-update-v13' option."
+	    exit 1
+fi
+
+
 # Create the log file
 mkdir -p "${LOG_FOLDER}"
 touch "${LOG_FILE}"
+
 
 # Redirect stderr to the log file
 exec 2>>"${LOG_FILE}"
@@ -163,14 +237,17 @@ check_version() {
         esac
 }
 
-# Function to log messages
+# Functions to log messages
+echo_ts() {
+	echo "$(date +"%Y-%m-%d %T") - $*"
+}
+
 log() {
-	echo "$(date +"%Y-%m-%d %T") - $*" >> "$LOG_FILE"
+	echo_ts "$*" >> "$LOG_FILE"
 }
 
 message() {
-	echo "$(date +"%Y-%m-%d %T") - $*"
-	log "$*"
+	echo_ts "$*" | tee -a "$LOG_FILE"
 }
 
 #Function to record and display the current step
@@ -181,16 +258,21 @@ setCurrentStep () {
 
 # Function to cleanup installation
 terminate() {
+	# display last 10 lines of the log file on abnormal exits
+	if [ $? -ne 0 ]; then
+		echo_ts "Displaying last 10 lines from the log file"
+		tail -n 10 "$LOG_FILE"
+	fi
 	# removing pid file
-	message "Exiting script"
 	rm -f "$pidfile"
+	message "Exiting script"
 }
 
 #Function to log error and location
 errorHandler() {
 	log "****** INSTALLATION FAILED *****"
-	message "Installation failed at step ${currentStep}. Please check log ${LOG_FILE} for details."
-	message "Error at line: $1 exiting with code $2 (last command was: $3)"
+	echo_ts "Installation failed at step ${currentStep}. Please check log ${LOG_FILE} for details."
+	log "Error at line: $1 exiting with code $2 (last command was: $3)"
 	exit "$2"
 }
 
@@ -261,23 +343,49 @@ install_asterisk() {
 	pkg_install asterisk-sounds-*
 }
 
+
+
 setup_repositories() {
 	apt-key del "9641 7C6E 0423 6E0A 986B  69EF DE82 7447 3C8D 0E52" >> "$log"
 
 	wget -O - http://deb.freepbx.org/gpg/aptly-pubkey.asc | gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/freepbx.gpg  >> "$log"
 
-	# Setting our default repo server
-	if [ "$testrepo" ] ; then
-		add-apt-repository -y -S "deb [ arch=amd64 ] http://deb.freepbx.org/freepbx17-dev bookworm main" >> "$log"
-		add-apt-repository -y -S "deb [ arch=amd64 ] http://deb.freepbx.org/freepbx17-dev bookworm main" >> "$log"
+	if [ "$testrepo" ]; then
+		REPO_URL="http://deb.freepbx.org/freepbx17-dev"
 	else
-		add-apt-repository -y -S "deb [ arch=amd64 ] http://deb.freepbx.org/freepbx17-prod bookworm main" >> "$log"
-		add-apt-repository -y -S "deb [ arch=amd64 ] http://deb.freepbx.org/freepbx17-prod bookworm main" >> "$log"
+		REPO_URL="http://deb.freepbx.org/freepbx17-prod"
 	fi
 
-	if [ ! "$noaac" ] ; then
-		add-apt-repository -y -S "deb $DEBIAN_MIRROR stable main non-free non-free-firmware" >> "$log"
+	REPO_LINE="deb [arch=amd64] $REPO_URL bookworm main"
+	REPO_FILE="/etc/apt/sources.list"
+
+	# Only add the line if it's not already present
+	if ! grep -qsF "$REPO_LINE" "$REPO_FILE" 2>/dev/null; then
+		echo "$REPO_LINE" | tee -a "$REPO_FILE" >> "$log"
+		echo "Added FreePBX repo: $REPO_LINE" >> "$log"
+	else
+		echo "FreePBX repo already exists: $REPO_LINE" >> "$log"
 	fi
+
+	if [ -z "$noaac" ]; then
+	     # Add main Bookworm repo if missing
+	     REPO_LINE="deb $DEBIAN_MIRROR bookworm main non-free non-free-firmware"
+
+	     # Only add if the line doesn't already exist
+	     if ! grep -qsF "$REPO_LINE" "$REPO_FILE"; then
+		     echo "$REPO_LINE" | tee -a "$REPO_FILE" >> "$log"
+		     echo "Added Bookworm main repo: $REPO_LINE" >> "$log"
+	     else
+		     echo "Bookworm main repo already exists: $REPO_LINE" >> "$log"
+	     fi			
+
+	    # Fix current debian repo to point to bookworm
+	    fix_debian12_repo
+	    # Block Debian 13/Trixie update because currently FreePBX only supports Debian 12/Bookworm 
+	    block_debian13_trixie_update
+	fi
+
+	apt-get update >> "$log"
 
 	setCurrentStep "Setting up Sangoma repository"
     local aptpref="/etc/apt/preferences.d/99sangoma-fpbx-repository"
@@ -307,38 +415,68 @@ create_post_apt_script() {
     {
         echo "#!/bin/bash"
         echo ""
-        echo ""
+        echo "if pidof -x 'asterisk-version-switch' > /dev/null; then"
+	echo "echo \"Asterisk version switch process is running, skipping post-apt script.\""
+	echo "exit 0"
+	echo "fi"
+	echo ""
         echo "dahdi_pres=\$(dpkg -l | grep dahdi-linux | wc -l)"
         echo ""
         echo "if [[ \$dahdi_pres -gt 0 ]]; then"
-        echo "    kernel_idx=\$(grep GRUB_DEFAULT /etc/default/grub | cut -d '=' -f 2)"
-        echo "    kernel_pres=\$(sed -n '/^menuentry/,/}/p' /boot/grub/grub.cfg  | grep -o -P 'vmlinuz-\S+')"
+	echo "    kernel_idx=\$(grep -v '^#' /etc/default/grub | grep GRUB_DEFAULT | cut -d '=' -f2 | tr -d '\"')"
+	echo ""
+	echo "    # Check if it contains '>'"
+	echo "    if [[ \"\$kernel_idx\" == *\">\"* ]]; then"
+	echo "        # Extract the value after '>'"
+	echo "        selected_idx=\"\${kernel_idx#*>}\""
+	echo "        submenu_format=true"
+	echo "    else"
+	echo "        # It's a numeric index, use it directly"
+	echo "        selected_idx=\"\$kernel_idx\""
+	echo "        submenu_format=false"
+	echo "    fi"
+	echo ""
+	echo "    kernel_pres=\$(grep -oP \"menuentry '.*?Linux \K[0-9.-]+(?=-amd64)\" /boot/grub/grub.cfg)"
+	echo "    kernel_count=\$(echo \"\$kernel_pres\" | wc -l)"
+	echo ""
+	echo "    if [[ \"\$selected_idx\" -ge \"\$kernel_count\" ]]; then"
+	echo "        if \$submenu_format; then"
+	echo "            echo \"ERROR: GRUB_DEFAULT is set to '\$kernel_idx' (submenu index: \$selected_idx), but only \$kernel_count kernel entries are available.\""
+	echo "            echo \"       This likely refers to a non-existent kernel inside a submenu (e.g., 'Advanced options for Debian GNU/Linux').\""
+        echo "            echo \"       Please update /etc/default/grub to a valid submenu index between 0 and \$((kernel_count - 1)), then run: update-grub\""
+	echo "        else"
+	echo "            echo \"ERROR: GRUB_DEFAULT is set to '\$selected_idx', but only \$kernel_count kernel entries were found.\""
+	echo "            echo \"       Valid indices are between 0 and \$((kernel_count - 1)).\""
+	echo "            echo \"       Please update /etc/default/grub and run: update-grub\""
+	echo "        fi"
+	echo "        exit 1"
+	echo "    fi"
+	echo ""
 	echo "    idx=0"
         echo "    for kernel in \$kernel_pres; do"
-        echo "        if [[ \$idx -ne \$kernel_idx ]]; then"
+        echo "        if [[ \$idx -ne \$selected_idx ]]; then"
         echo "            idx=\$((idx+1))"
         echo "            continue"
         echo "        fi"
         echo ""
-        printf "      kernel_ver=\$(echo \$kernel | sed -n -e 's/vmlinuz-\([[:digit:].-]*\).*/\\1/' -e 's/-$//p')\n"
-        echo "        logger \"Checking kernel modules for dahdi and wanpipe for kernel image \$kernel_ver\""
+        echo "        logger \"Checking kernel modules for dahdi and wanpipe for kernel image \$kernel\""
         echo ""
         echo "        #check if dahdi is installed or not of respective kernel version"
-        echo "        dahdi_kmod_pres=\$(dpkg -l | grep dahdi-linux-kmod | grep \$kernel_ver | wc -l)"
-        echo "        wanpipe_kmod_pres=\$(dpkg -l | grep kmod-wanpipe | grep \$kernel_ver | wc -l)"
+        echo "        dahdi_kmod_pres=\$(dpkg -l | grep dahdi-linux-kmod | grep \$kernel | wc -l)"
+        echo "        wanpipe_kmod_pres=\$(dpkg -l | grep kmod-wanpipe | grep \$kernel | wc -l)"
         echo ""
         echo "        if [[ \$dahdi_kmod_pres -eq 0 ]] && [[ \$wanpipe_kmod_pres -eq 0 ]]; then"
-        echo "            logger \"Upgrading dahdi-linux-kmod-\$kernel_ver and kmod-wanpipe-\$kernel_ver\""
-        echo "            echo \"Please wait for approx 2 min once apt command execution is completed as dahdi-linux-kmod-\$kernel_ver kmod-wanpipe-\$kernel_ver update in progress\""
-        echo "            apt -y upgrade dahdi-linux-kmod-\$kernel_ver kmod-wanpipe-\$kernel_ver > /dev/null 2>&1 | at now +1 minute&"
+        echo "            logger \"Upgrading dahdi-linux-kmod-\$kernel and kmod-wanpipe-\$kernel\""
+        echo "            echo \"Please wait for approx 2 min once apt command execution is completed as dahdi-linux-kmod-\$kernel kmod-wanpipe-\$kernel update in progress\""
+        echo "            apt -y upgrade dahdi-linux-kmod-\$kernel kmod-wanpipe-\$kernel > /dev/null 2>&1 | at now +1 minute&"
         echo "        elif [[ \$dahdi_kmod_pres -eq 0 ]]; then"
-        echo "            logger \"Upgrading dahdi-linux-kmod-\$kernel_ver\""
-        echo "            echo \"Please wait for approx 2 min once apt command execution is completed as dahdi-linux-kmod-\$kernel_ver update in progress\""
-        echo "            apt -y upgrade dahdi-linux-kmod-\$kernel_ver > /dev/null 2>&1 | at now +1 minute&"
+        echo "            logger \"Upgrading dahdi-linux-kmod-\$kernel\""
+        echo "            echo \"Please wait for approx 2 min once apt command execution is completed as dahdi-linux-kmod-\$kernel update in progress\""
+        echo "            apt -y upgrade dahdi-linux-kmod-\$kernel > /dev/null 2>&1 | at now +1 minute&"
         echo "        elif [[ \$wanpipe_kmod_pres -eq 0 ]];then"
-        echo "            logger \"Upgrading kmod-wanpipe-\$kernel_ver\""
-        echo "            echo \"Please wait for approx 2 min once apt command execution is completed as kmod-wanpipe-\$kernel_ver update in progress\""
-        echo "            apt -y upgrade kmod-wanpipe-\$kernel_ver > /dev/null 2>&1 | at now +1 minute&"
+        echo "            logger \"Upgrading kmod-wanpipe-\$kernel\""
+        echo "            echo \"Please wait for approx 2 min once apt command execution is completed as kmod-wanpipe-\$kernel update in progress\""
+        echo "            apt -y upgrade kmod-wanpipe-\$kernel > /dev/null 2>&1 | at now +1 minute&"
         echo "        fi"
         echo ""
         echo "        break"
@@ -692,24 +830,23 @@ if [ -z "$fqdn" ]; then
 fi
 
 #Ensure the script is not running
-pid="$$"
 pidfile='/var/run/freepbx17_installer.pid'
 
 if [ -f "$pidfile" ]; then
-	log "Previous PID file found."
-	if ps -p "${pid}" > /dev/null
-	then
-		message "FreePBX 17 installation process is already going on (PID=${pid}), hence not starting new process"
-		exit 1;
+	old_pid=$(cat "$pidfile")
+	if ps -p "$old_pid" > /dev/null; then
+		message "FreePBX 17 installation process is already going on (PID=$old_pid), hence not starting new process"
+		exit 1
+	else
+		log "Removing stale PID file"
+		rm -f "${pidfile}"
 	fi
-	log "Removing stale PID file"
-	rm -f "${pidfile}"
 fi
+echo "$$" > "$pidfile"
 
 setCurrentStep "Starting installation."
 trap 'errorHandler "$LINENO" "$?" "$BASH_COMMAND"' ERR
 trap "terminate" EXIT
-echo "${pid}" > $pidfile
 
 start=$(date +%s)
 message "  Starting FreePBX 17 installation process for $host $kernel"
@@ -739,8 +876,6 @@ EOF
 echo "postfix postfix/mailname string ${fqdn}" | debconf-set-selections
 echo "postfix postfix/main_mailer_type string 'Internet Site'" | debconf-set-selections
 
-# Install below packages which are required for repositories setup
-pkg_install software-properties-common
 pkg_install gnupg
 
 setCurrentStep "Setting up repositories"
@@ -799,7 +934,6 @@ DEPPRODPKGS=(
 	"php${PHPVERSION}-curl"
 	"php${PHPVERSION}-zip"
 	"php${PHPVERSION}-redis"
-	"php${PHPVERSION}-curl"
 	"php${PHPVERSION}-cli"
 	"php${PHPVERSION}-common"
 	"php${PHPVERSION}-mysql"
@@ -1064,9 +1198,6 @@ fi
 # Setting VIM configuration for mouse copy paste
 isVimRcAdapted=$(grep "FreePBX 17 changes" /etc/vim/vimrc.local |wc -l)
 if [ "0" = "${isVimRcAdapted}" ]; then
-	VIMRUNTIME=$(vim -e -T dumb --cmd 'exe "set t_cm=\<C-M>"|echo $VIMRUNTIME|quit' | tr -d '\015' )
-	VIMRUNTIME_FOLDER=$(echo "$VIMRUNTIME" | sed 's/ //g')
-
 	cat <<EOF >> /etc/vim/vimrc.local
 " FreePBX 17 changes - begin
 " This file loads the default vim options at the beginning and prevents
@@ -1075,7 +1206,7 @@ if [ "0" = "${isVimRcAdapted}" ]; then
 " whish at the end of this file.
 
 " Load the defaults
-source $VIMRUNTIME_FOLDER/defaults.vim
+source \$VIMRUNTIME/defaults.vim
 
 " Prevent the defaults from being loaded again later, if the user doesn't
 " have a local vimrc (~/.vimrc)
@@ -1095,9 +1226,12 @@ fi
 
 
 # Setting apt configuration to always DO NOT overwrite existing configurations
-cat <<EOF >> /etc/apt/apt.conf.d/00freepbx
+aptNoOverwrite=$(grep "DPkg::options { \"--force-confdef\"; \"--force-confold\"; }" /etc/apt/apt.conf.d/00freepbx |wc -l)
+if [ "0" = "${aptNoOverwrite}" ]; then
+        cat <<EOF >> /etc/apt/apt.conf.d/00freepbx
 DPkg::options { "--force-confdef"; "--force-confold"; }
 EOF
+fi
 
 
 #chown -R asterisk:asterisk /etc/ssl
@@ -1107,7 +1241,7 @@ if [ "$noast" ] ; then
 	message "Skipping Asterisk installation due to noasterisk option"
 else
 	# TODO Need to check if asterisk installed already then remove that and install new ones.
-	# Install Asterisk 21
+	# Install Asterisk
 	setCurrentStep "Installing Asterisk packages."
 	install_asterisk $ASTVERSION
 fi
@@ -1156,7 +1290,7 @@ else
   # Check if only opensource required then remove the commercial modules
   if [ "$opensourceonly" ]; then
     setCurrentStep "Removing commercial modules"
-    fwconsole ma list | awk '/Commercial/ {print $2}' | xargs -I {} fwconsole ma -f remove {} >> "$log"
+    fwconsole ma list | awk '/Commercial/ {print $2}' | xargs -t -I {} fwconsole ma -f remove {} >> "$log"
     # Remove firewall module also because it depends on commercial sysadmin module
     fwconsole ma -f remove firewall >> "$log" || true
   fi
@@ -1222,6 +1356,9 @@ sed -i 's/;max_input_vars = 1000/max_input_vars = 2000/' /etc/php/${PHPVERSION}/
 # Disable ServerTokens and ServerSignature for provide less information to attacker
 sed -i 's/\(^ServerTokens \).*/\1Prod/' /etc/apache2/conf-available/security.conf
 sed -i 's/\(^ServerSignature \).*/\1Off/' /etc/apache2/conf-available/security.conf
+
+# Setting pcre.jit to 0
+sed -i 's/;pcre.jit=1/pcre.jit=0/' /etc/php/${PHPVERSION}/apache2/php.ini
 
 # Restart apache2
 systemctl restart apache2 >> "$log"
