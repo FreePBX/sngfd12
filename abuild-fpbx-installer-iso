@@ -17,11 +17,13 @@ Required:
 Optional:
 	-b	Build version - defaults to yymm.1 eg. 2504.1 (where .1 is the bump)
 	-p	Path to mini input ISO for network installs with PXE and Cobbler.
+	-k	Locked kernel version. Affects PUB, UPG and INT spice (helps DAHDI hardware.)
 
 Examples:
 	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso
 	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso -p /path/to/mini-debian.iso
 	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso -p /path/to/mini-debian.iso -b 2504.3
+	$0 -i /path/to/debian-12.8.0-amd64-netinst.iso -p /path/to/mini-debian.iso -b 2504.3 -k 6.1.0-26-amd64
 
 You can change more options by setting Ansible variables on a per host or group basis.
 This shell script is a simple wrapper around ansible-playbook to run on your localhost.
@@ -30,13 +32,16 @@ Please see README.md for more information.
 	exit 1
 }
 
-while getopts ":i:p:b:" opt; do
+while getopts ":b:i:k:p:" opt; do
 	case "${opt}" in
 		b)
 			str_script_build=${OPTARG}
 			;;
 		i)
 			fn_iso_input=${OPTARG}
+			;;
+		k)
+			str_locked_kernel=${OPTARG}
 			;;
 		p)
 			fn_mini_iso_input=${OPTARG}
@@ -60,6 +65,10 @@ fi
 
 if [ -n "${str_script_build}" ]; then
 	extra_vars="${extra_vars} str_script_build=${str_script_build}"
+fi
+
+if [ -n "${str_locked_kernel}" ]; then
+	extra_vars="${extra_vars} str_locked_kernel=${str_locked_kernel}"
 fi
 
 ansible-playbook \
