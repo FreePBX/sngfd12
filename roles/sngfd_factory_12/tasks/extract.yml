@@ -1,10 +1,55 @@
-# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
-#
+# SPDX-FileCopyrightText: 2025-2026 Sangoma US Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 ---
 # file: sngfd_factory_12/tasks/extract.yml
 
-- name: Extracting files.
+- name: Get temp selections file in place.
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ dtmp.path }}"
+  loop:
+    - selections
+
+- name: Get list of desired packages to extract from ISO.
+  when: dir_deb_files != "" and bool_refresh_packages
+  ansible.builtin.shell:
+    cmd: grep -v -e deinstall$ {{ dtmp.path }}/selections | cut -f1 | sed 's/$/*.deb/'
+  register: extract_packages
+
+- name: Find packages to extract from ISO.
+  when: dir_deb_files != "" and bool_refresh_packages
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/xorriso
+      - -osirrox
+      -   "on"
+      - -indev
+      -   "{{ fn_iso_input }}"
+      - -find
+      -   "/pool/main"
+      - -type
+      -   "f"
+      - -name
+      -   "{{ item }}"
+  loop: "{{ extract_packages.stdout | split('\n') }}"
+  register: extract_packages_iso
+
+- name: Extracting packages from input ISO.
+  when: dir_deb_files != "" and bool_refresh_packages
+  ignore_errors: true
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/xorriso
+      - -osirrox
+      -   "on"
+      - -indev
+      -   "{{ fn_iso_input }}"
+      - -extract
+      -   "{{ item.stdout | regex_replace(\"'\", '') }}"
+      -   "{{ dir_deb_files }}/{{ item.stdout | regex_replace(\"'\", '') | basename }}"
+  loop: "{{ extract_packages_iso.results }}"
+
+- name: Extracting files from input ISO.
   ansible.builtin.command:
     argv:
       - /usr/bin/xorriso
@@ -19,6 +64,37 @@
     - { in: "md5sum.txt",                     out: "{{ dextract.path }}/md5sum.txt" }
     - { in: "boot/grub/theme/1",              out: "{{ dextract.path }}/grubtheme1" }
     - { in: ".disk/info",                     out: "{{ dextract.path }}/diskinfo" }
+
+- name: Extracting kernel files from input ISO only if not using DAHDI ISO.
+  when: fn_dahdi_iso_input == ""
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/xorriso
+      - -osirrox
+      -   "on"
+      - -indev
+      -   "{{ fn_iso_input }}"
+      - -extract
+      -   "{{ item.in }}"
+      -   "{{ item.out }}"
+  loop:
+    - { in: "pool/main/l/linux",              out: "{{ dextract.path }}/linux" }
+    - { in: "pool/main/l/linux-signed-amd64", out: "{{ dextract.path }}/linux-signed-amd64" }
+
+- name: Extracting files from DAHDI-friendly ISO if any.
+  when: fn_dahdi_iso_input != ""
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/xorriso
+      - -osirrox
+      -   "on"
+      - -indev
+      -   "{{ fn_dahdi_iso_input }}"
+      - -extract
+      -   "{{ item.in }}"
+      -   "{{ item.out }}"
+  loop:
+    - { in: "pool/main/l/linux",              out: "{{ dextract.path }}/linux" }
     - { in: "pool/main/l/linux-signed-amd64", out: "{{ dextract.path }}/linux-signed-amd64" }
 
 - name: Extracting files from mini ISO if any.

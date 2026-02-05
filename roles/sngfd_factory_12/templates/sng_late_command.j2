@@ -10,6 +10,17 @@ if [ -s /cdrom/20-sangoma.cfg ]; then
 	cp -a /cdrom/20-sangoma.cfg /target/var/tmp/
 fi
 
+# Selective preloading of additional packages to speed up installations.
+if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
+	# eventually when we move away from sources.list we can use the deb822 file only
+	#cp -a /cdrom/10-sngfd-file.sources /target/etc/apt/sources.list.d/
+	# these next three lines will hopefully go away soon
+	cp -a /target/etc/apt/sources.list /target/etc/apt/sources.sngfd
+	echo "deb [allow-insecure=yes trusted=yes] file:/var/spool/packages-sngfd {{ str_deb_codename }} main" > /target/etc/apt/sources.list
+	cat /target/etc/apt/sources.sngfd >> /target/etc/apt/sources.list
+	logger -t sng "Added local file package repository for faster installation."
+fi
+
 logger -t sng "BEGIN NETWORKING PARTS OF LATE COMMAND"
 
 # check for networking
@@ -18,6 +29,7 @@ if ! ping -c 2 -w 5 -W 10 github.com >/dev/null 2>&1; then
 else
 	# download the FreePBX shell script installer
 	# (less typing for the warehouse :)
+	# TODO: consider version locking and fallback to local copy
 	in-target wget -O /var/tmp/sng_freepbx_debian_install.sh https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh
 	in-target chmod +x /var/tmp/sng_freepbx_debian_install.sh
 
@@ -31,12 +43,13 @@ logger -t sng "END NETWORKING PARTS OF LATE COMMAND"
 logger -t sng "START ONESHOT PARTS OF LATE COMMAND"
 
 shell_sng_opts="{{ str_sng_opts }}"
+
 if [ $spicelevel == "oso" ]; then
 	shell_sng_opts="--opensourceonly"
-fi
-if [ $spicelevel == "fog" ]; then
+elif [ $spicelevel == "fog" ]; then
 	shell_sng_opts=""
 fi
+
 if [ $fpbxrepo == "test" ] ; then
 	shell_sng_opts="${shell_sng_opts} --testing"
 fi
@@ -67,12 +80,23 @@ ExecStartPost=-/bin/sh -c 'latest_log=$\$(ls -t /var/log/pbx/*.log | head -1); g
 # if successful, only then will next command run to prevent reinstall on next boot
 ExecStartPost=/usr/bin/systemctl disable sng-install-freepbx
 EOFO
+
 if [ "$spicelevel" == "int" ]; then
-cat << EOFO2 >> /target/usr/lib/systemd/system/sng-install-freepbx.service
+	cat << EOFO2A >> /target/usr/lib/systemd/system/sng-install-freepbx.service
 ExecStartPost=cp /var/tmp/20-sangoma.cfg /etc/default/grub.d/
 ExecStartPost=update-grub
-EOFO2
+EOFO2A
 fi
+
+if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
+	cat << EOFO2B >> /target/usr/lib/systemd/system/sng-install-freepbx.service
+#ExecStartPost=echo "Enabled: no" >> /etc/apt/sources.list.d/10-sngfd-file.sources
+ExecStartPost=sed -i 's/^deb \[allow-insecure=yes trusted=yes\] file/#&/' /etc/apt/sources.list
+ExecStartPost=apt-get update
+ExecStartPost=apt-get -y upgrade
+EOFO2B
+fi
+
 cat << EOFO3 >> /target/usr/lib/systemd/system/sng-install-freepbx.service
 ExecStartPost=echo "FreePBX installation successful!"
 # all the StopPost stuff will always run, successful install or not successful
@@ -207,6 +231,9 @@ fi
 # purge apt-proxy and any other default/warehouse apt configs
 rm -f /etc/apt/apt.conf
 
+# include Sangoma support services public SSH keys
+apt-get -y install ssh-keys
+
 # only needed at first reboot
 systemctl disable sng-install-freepbx || true
 
@@ -337,14 +364,20 @@ else
 		# TODO: speed up the removal of the non-frozen kernel
 		#in-target apt-mark hold linux-image-{{ str_locked_kernel }}
 		# freeze right there kernel, DAHDI would like a word with you
+		# copy the kernel packages from cdrom to target
+		cp -a /cdrom/pool/main/l/linux/*.deb /target/var/tmp/
+		cp -a /cdrom/pool/main/l/linux-base/*.deb /target/var/tmp/
+		cp -a /cdrom/pool/main/l/linux-signed-amd64/*.deb /target/var/tmp/
+		cp -a /cdrom/pool/main/l/linux-signed-amd64/*.udeb /target/var/tmp/
 		gone=$(ls /target/boot/vmlinuz* | grep -v "{{ str_locked_kernel }}" | cut -f4 -d/ | sed 's/vmlinuz-//')
+		fishing=$(ls /target/var/tmp/linux-image* | grep "{{ str_locked_kernel }}" | cut -f3-8 -d/)
 		in-target apt-get -y remove linux-image-$gone || true
-		in-target apt-get -y install linux-image-{{ str_locked_kernel }}
+		in-target apt-get -y install linux-image-{{ str_locked_kernel }} || in-target dpkg -i $fishing
 	fi
 fi
 
 # '{{ str_whoami }}' user can sudo
-# requires network at this late point because cdrom is unmounted
+# requires network at this late point because cdrom is unmounted (TODO: check if still the case)
 in-target apt-get -y install sudo || true
 in-target usermod -a -G sudo {{ str_whoami }} || true
 
@@ -470,6 +503,13 @@ in-target resize2fs /dev/mapper/pbxvg0-lvvarlogaudit
 in-target resize2fs /dev/mapper/pbxvg0-lvvarspool
 in-target resize2fs /dev/mapper/pbxvg0-lvvartmp
 set -e
+
+# copy additional package files (if any) to widened target for faster installations
+if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
+	mkdir -p /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd
+	cp -a /cdrom/Packages-sngfd.gz /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/Packages.gz
+	cp -a /cdrom/packages-sngfd/*.deb /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/
+fi
 
 in-target sync
 

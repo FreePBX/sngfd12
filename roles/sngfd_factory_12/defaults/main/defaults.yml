@@ -1,5 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
-#
+# SPDX-FileCopyrightText: 2025-2026 Sangoma US Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 ---
 # file: defaults/main/defaults.yml
@@ -103,7 +102,7 @@ str_sng_opts: "--dahdi"
 str_whoami: "sangoma"
 
 # GRUB wallpaper (if not in this directory, then supply path to it)
-fn_wallpaper: "sangoma-tango-tiny-kit-background-for-grub-copyright-2025.png"
+fn_wallpaper: "sangoma-tango-tiny-kit-background-for-grub-copyright-2025-2026.png"
 # no wallpaper :(
 #fn_wallpaper: ""
 
@@ -229,3 +228,17 @@ dn_cdrom: "cdrom-{{ str_iso_out_base|lower }}"
 
 # MINI ISO directory name.
 dn_mini: "mini-{{ str_iso_out_base|lower }}"
+
+# Preloading to speed up installations.
+dir_deb_files: ""
+bool_refresh_packages: false
+bool_download_freepbx_packages: false
+fn_dahdi_iso_input: ""
+preload_debfpbx_base_url: "http://deb.freepbx.org/freepbx17-prod"
+preload_debfpbx_amd64_url: "{{ preload_debfpbx_base_url }}/dists/{{ str_deb_codename }}/main/binary-amd64"
+#preload_base_old_cd_url: "https://cdimage.debian.org/cdimage/archive/12.11.0/amd64/iso-cd"
+#preload_old_cd: "debian-12.11.0-amd64-netinst.iso"
+#preload_old_cd_url: "{{ base_old_cd_url }}/{{ old_cd }}"
+#preload_base_new_dvd_url: "https://cdimage.debian.org/cdimage/archive/12.13.0/amd64/iso-dvd"
+#preload_new_dvd: "debian-12.13.0-amd64-DVD-1.iso"
+#preload_new_dvd_url: "{{ base_new_dvd_url }}/{{ new_dvd }}"

@@ -1,5 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
-#
+# SPDX-FileCopyrightText: 2025-2026 Sangoma US Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 ---
 # file: sngfd_factory_12/tasks/directories.yml
@@ -33,3 +32,9 @@
     path: "{{ dextract.path }}/{{ dn_mini }}"
     state: directory
   register: dextractmini
+
+- name: Might need to make new directory for extracting/downloading packages.
+  when: dir_deb_files != ""
+  ansible.builtin.file:
+    path: "{{ dir_deb_files }}"
+    state: directory
