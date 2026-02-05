@@ -102,7 +102,7 @@ str_sng_opts: "--dahdi"
 str_whoami: "sangoma"
 
 # GRUB wallpaper (if not in this directory, then supply path to it)
-fn_wallpaper: "sangoma-tango-tiny-kit-background-for-grub-copyright-2025-2026.png"
+fn_wallpaper: "sangoma-tango-tiny-kit-background-for-grub-copyright-2026.png"
 # no wallpaper :(
 #fn_wallpaper: ""
 
