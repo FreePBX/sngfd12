@@ -18,7 +18,7 @@
     file: directories.yml
 
 - name: Download FreePBX packages for preloading.
-  when: bool_download_freepbx_packages
+  when: bool_download_freepbx_packages | bool
   ansible.builtin.include_tasks:
     file: download.yml
 

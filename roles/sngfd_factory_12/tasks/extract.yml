@@ -11,13 +11,13 @@
     - selections
 
 - name: Get list of desired packages to extract from ISO.
-  when: dir_deb_files != "" and bool_refresh_packages
+  when: dir_deb_files != "" and bool_refresh_packages | bool
   ansible.builtin.shell:
     cmd: grep -v -e deinstall$ {{ dtmp.path }}/selections | cut -f1 | sed 's/$/*.deb/'
   register: extract_packages
 
 - name: Find packages to extract from ISO.
-  when: dir_deb_files != "" and bool_refresh_packages
+  when: dir_deb_files != "" and bool_refresh_packages | bool
   ansible.builtin.command:
     argv:
       - /usr/bin/xorriso
@@ -35,7 +35,7 @@
   register: extract_packages_iso
 
 - name: Extracting packages from input ISO.
-  when: dir_deb_files != "" and bool_refresh_packages
+  when: dir_deb_files != "" and bool_refresh_packages | bool
   ignore_errors: true
   ansible.builtin.command:
     argv:
