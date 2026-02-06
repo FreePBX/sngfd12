@@ -10,6 +10,17 @@ if [ -s /cdrom/20-sangoma.cfg ]; then
 	cp -a /cdrom/20-sangoma.cfg /target/var/tmp/
 fi
 
+# Selective preloading of additional packages to speed up installations.
+if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
+	# eventually when we move away from sources.list we can use the deb822 file only
+	#cp -a /cdrom/10-sngfd-file.sources /target/etc/apt/sources.list.d/
+	# these next three lines will hopefully go away soon
+	cp -a /target/etc/apt/sources.list /target/etc/apt/sources.sngfd
+	echo "deb [allow-insecure=yes trusted=yes] file:/var/spool/packages-sngfd {{ str_deb_codename }} main" > /target/etc/apt/sources.list
+	cat /target/etc/apt/sources.sngfd >> /target/etc/apt/sources.list
+	logger -t sng "Added local file package repository for faster installation."
+fi
+
 logger -t sng "BEGIN NETWORKING PARTS OF LATE COMMAND"
 
 # check for networking
@@ -18,6 +29,7 @@ if ! ping -c 2 -w 5 -W 10 github.com >/dev/null 2>&1; then
 else
 	# download the FreePBX shell script installer
 	# (less typing for the warehouse :)
+	# TODO: consider version locking and fallback to local copy
 	in-target wget -O /var/tmp/sng_freepbx_debian_install.sh https://github.com/FreePBX/sng_freepbx_debian_install/raw/master/sng_freepbx_debian_install.sh
 	in-target chmod +x /var/tmp/sng_freepbx_debian_install.sh
 
@@ -31,12 +43,13 @@ logger -t sng "END NETWORKING PARTS OF LATE COMMAND"
 logger -t sng "START ONESHOT PARTS OF LATE COMMAND"
 
 shell_sng_opts="{{ str_sng_opts }}"
+
 if [ $spicelevel == "oso" ]; then
 	shell_sng_opts="--opensourceonly"
-fi
-if [ $spicelevel == "fog" ]; then
+elif [ $spicelevel == "fog" ]; then
 	shell_sng_opts=""
 fi
+
 if [ $fpbxrepo == "test" ] ; then
 	shell_sng_opts="${shell_sng_opts} --testing"
 fi
@@ -67,12 +80,23 @@ ExecStartPost=-/bin/sh -c 'latest_log=$\$(ls -t /var/log/pbx/*.log | head -1); g
 # if successful, only then will next command run to prevent reinstall on next boot
 ExecStartPost=/usr/bin/systemctl disable sng-install-freepbx
 EOFO
+
 if [ "$spicelevel" == "int" ]; then
-cat << EOFO2 >> /target/usr/lib/systemd/system/sng-install-freepbx.service
+	cat << EOFO2A >> /target/usr/lib/systemd/system/sng-install-freepbx.service
 ExecStartPost=cp /var/tmp/20-sangoma.cfg /etc/default/grub.d/
 ExecStartPost=update-grub
-EOFO2
+EOFO2A
 fi
+
+if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
+	cat << EOFO2B >> /target/usr/lib/systemd/system/sng-install-freepbx.service
+#ExecStartPost=echo "Enabled: no" >> /etc/apt/sources.list.d/10-sngfd-file.sources
+ExecStartPost=sed -i 's/^deb \[allow-insecure=yes trusted=yes\] file/#&/' /etc/apt/sources.list
+ExecStartPost=apt-get update
+ExecStartPost=apt-get -y upgrade
+EOFO2B
+fi
+
 cat << EOFO3 >> /target/usr/lib/systemd/system/sng-install-freepbx.service
 ExecStartPost=echo "FreePBX installation successful!"
 # all the StopPost stuff will always run, successful install or not successful
@@ -181,28 +205,41 @@ cat << EOFJ > /target/usr/local/sbin/sng-eol
 # change the default passwords to the MAC address - upper case without colons
 macpass=\$(/usr/sbin/fwconsole sa info | grep -m 1 "Machine ID:" | sed 's/Machine ID://' | tr -d '[:blank:]' | sed 's/://g')
 macpasslength=\$(echo -n \$macpass | wc -m | tr -d '[:blank:]')
-if [ \$macpasslength != 12 ]; then
+
+if [ \$macpasslength = 12 ]; then
+	echo "System is Activated. Installing Sangoma support SSH keys."
+	apt-get -y install ssh-keys
+else
 	macpass=\$(ip -br link | grep -m 1 -v LOOPBACK | awk '{print \$3}' | tr '[:lower:]' '[:upper:]' | sed 's/://g')
 	macpasslength=\$(echo -n \$macpass | wc -m | tr -d '[:blank:]')
-	if [ \$macpasslength != 12 ]; then
-		echo "Could not change passwords. Is this deployment active ?  Check 'fwconsole sa i'."
+	if [ \$macpasslength = 12 ]; then
+		echo "System is NOT Activated. Deriving password from MAC. No Sangoma support SSH keys."
+	else
+		echo "Could not change passwords. Is this deployment active ? Is network connected ?"
+		echo "Check 'fwconsole sa info' and try activating again. Reinstall if problem persists."
+		echo "EXITING - DO NOT SHIP UNTIL ABOVE PROBLEMS ARE CORRECTED."
+		exit
 	fi
 fi
+
 if [ \$macpasslength = 12 ]; then
 	echo "root:\$macpass" | /sbin/chpasswd
 	echo "{{ str_whoami }}:\$macpass" | /sbin/chpasswd
-	echo "Default passwords for 'root' and '{{ str_whoami }}' CLI users changed to: \$macpass"
+	echo "Default passwords for 'root' and '{{ str_whoami }}' shell users changed to: \$macpass"
 fi
 
-# force user to change their password on next CLI login
+echo "Force user to change their password on next shell login."
 /usr/bin/passwd --expire root
 /usr/bin/passwd --expire {{ str_whoami }}
 
 # check if we want to lock the root user
 # (this may also done near end of Late Command, depends on bool_lock_root_early variable)
 if {{ bool_lock_root_eol|lower }}; then
+	echo "Disabling 'root' account access. Instead use '{{ str_whoami }}' then sudo command."
 	/usr/bin/passwd -l root
 fi
+
+echo "Cleaning up installer bits."
 
 # purge apt-proxy and any other default/warehouse apt configs
 rm -f /etc/apt/apt.conf
@@ -210,13 +247,32 @@ rm -f /etc/apt/apt.conf
 # only needed at first reboot
 systemctl disable sng-install-freepbx || true
 
-# show the freepbx sysadmin info again
-fwconsole sa i || true
-
 # self-immolation of installer-related things
 #rm -f /usr/local/sbin/sng-eol
 rm -f /var/tmp/sng_freepbx_debian_install.sh
 rm -f /usr/lib/systemd/system/sng-install-freepbx.service
+
+# show the freepbx sysadmin info again
+echo "Output of 'fwconsole sa info':"
+fwconsole sa info || true
+
+# final instructions
+echo ""
+echo "**************************************"
+echo "ATTENTION FACTORY WAREHOUSE INSTALLER!"
+echo "**************************************"
+echo ""
+echo "You may still need to run another EOL verification tool."
+echo "After that, type 'exit', or use a new terminal,"
+echo "and then please try the '{{ str_whoami }}' user login"
+echo "with the new, unique, MAC-based password."
+echo ""
+echo "BUT DO NOT CHANGE THEIR PASSWORD WHEN PROMPTED."
+echo "THAT IS FOR THE CUSTOMER TO DO WHEN THEY GET THE SYSTEM."
+echo "INSTEAD PRESS CTRL+ALT+DEL TO REBOOT. (IT WILL TAKE A MINUTE.)"
+echo ""
+echo "At the boot screen, disconnect power, then add lit/stickers and ship it!"
+echo "Missed the boot screen? Press CTRL+ALT+DEL again and *watch* :-)"
 EOFJ
 
 chmod +x /target/usr/local/sbin/sng-eol
@@ -337,14 +393,20 @@ else
 		# TODO: speed up the removal of the non-frozen kernel
 		#in-target apt-mark hold linux-image-{{ str_locked_kernel }}
 		# freeze right there kernel, DAHDI would like a word with you
+		# copy the kernel packages from cdrom to target
+		cp -a /cdrom/pool/main/l/linux/*.deb /target/var/tmp/
+		cp -a /cdrom/pool/main/l/linux-base/*.deb /target/var/tmp/
+		cp -a /cdrom/pool/main/l/linux-signed-amd64/*.deb /target/var/tmp/
+		cp -a /cdrom/pool/main/l/linux-signed-amd64/*.udeb /target/var/tmp/
 		gone=$(ls /target/boot/vmlinuz* | grep -v "{{ str_locked_kernel }}" | cut -f4 -d/ | sed 's/vmlinuz-//')
+		fishing=$(ls /target/var/tmp/linux-image* | grep "{{ str_locked_kernel }}" | cut -f3-8 -d/)
 		in-target apt-get -y remove linux-image-$gone || true
-		in-target apt-get -y install linux-image-{{ str_locked_kernel }}
+		in-target apt-get -y install linux-image-{{ str_locked_kernel }} || in-target dpkg -i $fishing
 	fi
 fi
 
 # '{{ str_whoami }}' user can sudo
-# requires network at this late point because cdrom is unmounted
+# requires network at this late point because cdrom is unmounted (TODO: check if still the case)
 in-target apt-get -y install sudo || true
 in-target usermod -a -G sudo {{ str_whoami }} || true
 
@@ -470,6 +532,13 @@ in-target resize2fs /dev/mapper/pbxvg0-lvvarlogaudit
 in-target resize2fs /dev/mapper/pbxvg0-lvvarspool
 in-target resize2fs /dev/mapper/pbxvg0-lvvartmp
 set -e
+
+# copy additional package files (if any) to widened target for faster installations
+if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
+	mkdir -p /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd
+	cp -a /cdrom/Packages-sngfd.gz /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/Packages.gz
+	cp -a /cdrom/packages-sngfd/*.deb /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/
+fi
 
 in-target sync
 

@@ -1,5 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
-#
+# SPDX-FileCopyrightText: 2025-2026 Sangoma US Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 ---
 # file: sngfd_factory_12/tasks/main.yml
@@ -14,9 +13,14 @@
     msg: "Oops that output ISO already exists: '{{ fn_iso_output }}'"
   when: stat_iso_output.stat.exists
 
-- name: Make temporary directories.
+- name: Make temporary directories and possibly one stickier directory for downloads.
   ansible.builtin.include_tasks:
     file: directories.yml
+
+- name: Download FreePBX packages for preloading.
+  when: bool_download_freepbx_packages | bool
+  ansible.builtin.include_tasks:
+    file: download.yml
 
 - name: Extract from input ISO.
   ansible.builtin.include_tasks:

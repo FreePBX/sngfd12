@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Sangoma US Inc.
+# SPDX-License-Identifier: GPL-2.0-only
+---
+# file: sngfd_factory_12/tasks/download.yml
+
+- name: Download FreePBX Packages.gz file.
+  ansible.builtin.get_url:
+    url: "{{ preload_debfpbx_amd64_url }}/{{ item }}"
+    dest: "{{ dir_deb_files }}/freepbx-packages.gz"
+  loop:
+    - Packages.gz
+
+- name: Open the packages file.
+  ansible.builtin.command:
+    cmd: "gunzip {{ dir_deb_files }}/freepbx-packages.gz"
+    creates: "{{ dir_deb_files }}/freepbx-packages"
+
+- name: Get limited list of desired packages to download.
+  ansible.builtin.shell:
+    cmd: grep "^Filename" "{{ dir_deb_files }}/freepbx-packages" | grep ".deb$" | grep -e "asterisk-sounds" -e "freepbx17" -e "sysadmin17" | cut -f2 -d':' | sed "s/ //g"
+  register: download_packages
+
+- name: Download FreePBX supplied packages.
+  ansible.builtin.get_url:
+    url: "{{ preload_debfpbx_base_url }}/{{ item }}"
+    dest: "{{ dir_deb_files }}"
+  loop: "{{ download_packages.stdout | split('\n') }}"
