@@ -205,45 +205,74 @@ cat << EOFJ > /target/usr/local/sbin/sng-eol
 # change the default passwords to the MAC address - upper case without colons
 macpass=\$(/usr/sbin/fwconsole sa info | grep -m 1 "Machine ID:" | sed 's/Machine ID://' | tr -d '[:blank:]' | sed 's/://g')
 macpasslength=\$(echo -n \$macpass | wc -m | tr -d '[:blank:]')
-if [ \$macpasslength != 12 ]; then
+
+if [ \$macpasslength = 12 ]; then
+	echo "System is Activated. Installing Sangoma support SSH keys."
+	apt-get -y install ssh-keys
+else
 	macpass=\$(ip -br link | grep -m 1 -v LOOPBACK | awk '{print \$3}' | tr '[:lower:]' '[:upper:]' | sed 's/://g')
 	macpasslength=\$(echo -n \$macpass | wc -m | tr -d '[:blank:]')
-	if [ \$macpasslength != 12 ]; then
-		echo "Could not change passwords. Is this deployment active ?  Check 'fwconsole sa i'."
+	if [ \$macpasslength = 12 ]; then
+		echo "System is NOT Activated. Deriving password from MAC. No Sangoma support SSH keys."
+	else
+		echo "Could not change passwords. Is this deployment active ? Is network connected ?"
+		echo "Check 'fwconsole sa info' and try activating again. Reinstall if problem persists."
+		echo "EXITING - DO NOT SHIP UNTIL ABOVE PROBLEMS ARE CORRECTED."
+		exit
 	fi
 fi
+
 if [ \$macpasslength = 12 ]; then
 	echo "root:\$macpass" | /sbin/chpasswd
 	echo "{{ str_whoami }}:\$macpass" | /sbin/chpasswd
-	echo "Default passwords for 'root' and '{{ str_whoami }}' CLI users changed to: \$macpass"
+	echo "Default passwords for 'root' and '{{ str_whoami }}' shell users changed to: \$macpass"
 fi
 
-# force user to change their password on next CLI login
+echo "Force user to change their password on next shell login."
 /usr/bin/passwd --expire root
 /usr/bin/passwd --expire {{ str_whoami }}
 
 # check if we want to lock the root user
 # (this may also done near end of Late Command, depends on bool_lock_root_early variable)
 if {{ bool_lock_root_eol|lower }}; then
+	echo "Disabling 'root' account access. Instead use '{{ str_whoami }}' then sudo command."
 	/usr/bin/passwd -l root
 fi
+
+echo "Cleaning up installer bits."
 
 # purge apt-proxy and any other default/warehouse apt configs
 rm -f /etc/apt/apt.conf
 
-# include Sangoma support services public SSH keys
-apt-get -y install ssh-keys
-
 # only needed at first reboot
 systemctl disable sng-install-freepbx || true
-
-# show the freepbx sysadmin info again
-fwconsole sa i || true
 
 # self-immolation of installer-related things
 #rm -f /usr/local/sbin/sng-eol
 rm -f /var/tmp/sng_freepbx_debian_install.sh
 rm -f /usr/lib/systemd/system/sng-install-freepbx.service
+
+# show the freepbx sysadmin info again
+echo "Output of 'fwconsole sa info':"
+fwconsole sa info || true
+
+# final instructions
+echo ""
+echo "**************************************"
+echo "ATTENTION FACTORY WAREHOUSE INSTALLER!"
+echo "**************************************"
+echo ""
+echo "You may still need to run another EOL verification tool."
+echo "After that, type 'exit', or use a new terminal,"
+echo "and then please try the '{{ str_whoami }}' user login"
+echo "with the new, unique, MAC-based password."
+echo ""
+echo "BUT DO NOT CHANGE THEIR PASSWORD WHEN PROMPTED."
+echo "THAT IS FOR THE CUSTOMER TO DO WHEN THEY GET THE SYSTEM."
+echo "INSTEAD PRESS CTRL+ALT+DEL TO REBOOT. (IT WILL TAKE A MINUTE.)"
+echo ""
+echo "At the boot screen, disconnect power, then add lit/stickers and ship it!"
+echo "Missed the boot screen? Press CTRL+ALT+DEL again and *watch* :-)"
 EOFJ
 
 chmod +x /target/usr/local/sbin/sng-eol
