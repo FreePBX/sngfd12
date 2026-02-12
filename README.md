@@ -2,7 +2,7 @@
 
 "The FreePBX Factory"
 
-### Copyright (C) 2024-2025, Sangoma US Inc.
+### Copyright (C) 2024-2026, Sangoma US Inc.
 
 ### GNU General Public License (GPL) v2.0-only
 

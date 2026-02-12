@@ -1,8 +1,10 @@
-# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
-#
+# SPDX-FileCopyrightText: 2025-2026 Sangoma US Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 ---
 # file: sngfd_factory_12/tasks/output.yml
+
+# TODO: the hashes do not yet take into account the
+#       preloaded packages or fixed DAHDI kernels
 
 - name: Remove old file hashes from md5sum.txt
   ansible.builtin.lineinfile:
@@ -149,6 +151,30 @@
       -   "{{ fn_iso_input }}"
       - -outdev
       -   "{{ fn_iso_output }}"
+      - -pathspecs
+      -   "off"
+      - -disk_pattern
+      -   "on"
+      - "{{ (dir_deb_files == '') | ternary('', '-map_l') }}"
+      - "{{ (dir_deb_files == '') | ternary('', dir_deb_files) }}"
+      - "{{ (dir_deb_files == '') | ternary('', '/packages-sngfd') }}"
+      - "{{ (dir_deb_files == '') | ternary('', dir_deb_files ~ '/*.deb') }}"
+      - "{{ (dir_deb_files == '') | ternary('', '--') }}"
+      - -map_l
+      -   "{{ dextract.path }}/linux"
+      -   "/pool/main/l/linux"
+      -   "{{ dextract.path }}/linux/*.deb"
+      - --
+      - -map_l
+      -   "{{ dextract.path }}/linux-signed-amd64"
+      -   "/pool/main/l/linux-signed-amd64"
+      -   "{{ dextract.path }}/linux-signed-amd64/*.deb"
+      - --
+      - -map_l
+      -   "{{ dextract.path }}/linux-signed-amd64"
+      -   "/pool/main/l/linux-signed-amd64"
+      -   "{{ dextract.path }}/linux-signed-amd64/*.udeb"
+      - --
       - -map
       -   "{{ dextract.path }}/md5sum.txt"
       -   "md5sum.txt"
@@ -269,6 +295,12 @@
       - -map
       -   "{{ dcdrom.path }}/20-sangoma.cfg"
       -   "20-sangoma.cfg"
+      - -map
+      -   "{{ dcdrom.path }}/10-sngfd-file.sources"
+      -   "10-sngfd-file.sources"
+      - -map
+      -   "{{ dcdrom.path }}/Packages-sngfd.gz"
+      -   "Packages-sngfd.gz"
       - -map
       -   "{{ dcdrom.path }}/sng_boot_all_command"
       -   "sng_boot_all_command"

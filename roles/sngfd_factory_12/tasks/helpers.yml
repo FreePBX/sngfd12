@@ -1,5 +1,4 @@
-# SPDX-FileCopyrightText: 2025 Sangoma US Inc.
-#
+# SPDX-FileCopyrightText: 2025-2026 Sangoma US Inc.
 # SPDX-License-Identifier: GPL-2.0-only
 ---
 # file: sngfd_factory_12/tasks/helpers.yml
@@ -20,9 +19,38 @@
     - README.txt
     - WARNING.txt
 
-- name: The EULA contains the distro version number so it is templated.
+- name: The EULA and repo sources are templated.
   ansible.builtin.template:
     src: "{{ item }}.j2"
     dest: "{{ dcdrom.path }}/{{ item }}"
   loop:
     - EULA.txt
+    - 10-sngfd-file.sources
+
+- name: Build new Packages for preloading.
+  when: dir_deb_files != ""
+  ansible.builtin.shell:
+    cmd: apt-ftparchive packages {{ dir_deb_files }} > {{ dcdrom.path }}/Packages-sngfd
+    chdir: "{{ dir_deb_files }}"
+
+- name: Package Filename path adjustment.
+  when: dir_deb_files != ""
+  ansible.builtin.replace:
+    path: "{{ dcdrom.path }}/Packages-sngfd"
+    regexp: '^Filename: .*/'
+    replace: 'Filename: dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/'
+
+- name: Compress the Packages file.
+  when: dir_deb_files != ""
+  ansible.builtin.command:
+    argv:
+      - gzip
+      - --no-name
+      - Packages-sngfd
+    chdir: "{{ dcdrom.path }}"
+
+- name: Stub a Packages file when packages not included.
+  when: dir_deb_files == ""
+  ansible.builtin.file:
+    path: "{{ dcdrom.path }}/Packages-sngfd.gz"
+    state: touch
