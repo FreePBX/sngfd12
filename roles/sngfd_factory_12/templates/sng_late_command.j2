@@ -383,6 +383,18 @@ in-target blkdiscard /dev/xvda3
 in-target sfdisk --delete /dev/xvda 3
 set -e
 
+# shell script install of TFTP server uses /tftpboot and not default Debian location of /srv/tftp
+# TODO: standardize on /srv/tftp in v18
+if [ $spicelevel == "int" ] ; then
+	logger -t sng "Utilizing root partition for TFTP server files in /tftpboot e.g. phone firmware"
+else
+	logger -t sng "Utilizing var partition for TFTP server files in /tftpboot e.g. phone firmware"
+	mkdir -p /target/var/lib/tftpboot
+	mkdir -p /target/tftpboot
+	echo "# bind mount so that /tftpboot is overlay of /var/lib/tftpboot"		>> /target/etc/fstab
+	echo "/var/lib/tftpboot		/tftpboot	none	bind	0	0"	>> /target/etc/fstab
+fi
+
 if [ $spicelevel == "oso" ] || [ $spicelevel == "fog" ]; then
 	logger -t sng "NOT LOCKING the kernel on ${spicelevel}"
 else
