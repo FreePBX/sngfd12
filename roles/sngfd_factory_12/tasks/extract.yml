@@ -160,17 +160,8 @@
     msg: "kernel {{ str_locked_kernel }}"
 
 - name: Generate older Linux kernel parts list for DAHDI support.
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/find
-      - "{{ dextract.path }}/{{ item }}"
-      - -maxdepth
-      - 1
-      - -type
-      - f
-      - -fprintf
-      - "{{ dcdrom.path }}/dahdi-supported-{{ item }}.list"
-      - '%f\n'
+  ansible.builtin.shell:
+    cmd: /usr/bin/find "{{ dextract.path }}/{{ item }}" -maxdepth 1 -type f -printf "%f\n" | sort > "{{ dcdrom.path }}/dahdi-supported-{{ item }}.list"
   loop:
     - "linux"
     - "linux-base"
