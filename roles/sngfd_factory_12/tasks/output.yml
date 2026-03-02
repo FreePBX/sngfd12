@@ -368,6 +368,24 @@
       -   "cdrom"
       -   "/"
       - --
+      - -chmod_r
+      -   "a=rx"
+      -   "/"
+      - --
+      - -preparer_id
+      -   "{{ str_script_name }} sha256={{ str_sngfd_sha256 }}"
+      - -publisher
+      -   "{{ str_vendor }} {{ str_vendor_url }}"
+      - -application_id
+      -   "{{ str_our_full_name }} {{ str_script_major }}"
+      - -system_id
+      -   "{{ str_host_name }}"
+      - -copyright_file
+      -   "EULA.txt"
+      - -abstract_file
+      -   "README.txt"
+      - -application_use
+      -   "0x{{ str_freepbx_version }}"
       - -volid
       -   "{{ str_our_short_cap_name }}_{{ str_script_version_underscore }}_{{ str_spice }}{{ str_diy }}"
       - alter_date_r

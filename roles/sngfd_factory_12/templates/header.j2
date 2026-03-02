@@ -8,10 +8,12 @@
 # Script Name: {{ str_script_name }}
 # Script Build: {{ str_script_build }}
 # Script Version: {{ str_script_version }}
-# Script SHA512SUM: {{ str_script_sha512sum }}
+# Role SHA256: {{ str_sngfd_sha256 }}
 # FreePBX Version: {{ str_freepbx_version }}
 # Spiciness: {{ str_spice }}
 # Debian input ISO: {{ fn_iso_input|basename }}
+# Debian input ISO for DAHDI: {{ fn_dahdi_iso_input|basename }}
+# Debian input mini ISO for PXE: {{ fn_mini_iso_input|basename }}
 # SFPBX output ISO: {{ fn_iso_output }}
 # Others:
 # - bool_embed_apt_key={{ bool_embed_apt_key|lower }}
