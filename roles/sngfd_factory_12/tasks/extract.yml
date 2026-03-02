@@ -79,6 +79,7 @@
       -   "{{ item.out }}"
   loop:
     - { in: "pool/main/l/linux",              out: "{{ dextract.path }}/linux" }
+    - { in: "pool/main/l/linux-base",         out: "{{ dextract.path }}/linux-base" }
     - { in: "pool/main/l/linux-signed-amd64", out: "{{ dextract.path }}/linux-signed-amd64" }
 
 - name: Extracting files from DAHDI-friendly ISO if any.
@@ -95,6 +96,7 @@
       -   "{{ item.out }}"
   loop:
     - { in: "pool/main/l/linux",              out: "{{ dextract.path }}/linux" }
+    - { in: "pool/main/l/linux-base",         out: "{{ dextract.path }}/linux-base" }
     - { in: "pool/main/l/linux-signed-amd64", out: "{{ dextract.path }}/linux-signed-amd64" }
 
 - name: Extracting files from mini ISO if any.
@@ -156,3 +158,20 @@
 - name: Kernel we are locking to.
   ansible.builtin.debug:
     msg: "kernel {{ str_locked_kernel }}"
+
+- name: Generate older Linux kernel parts list for DAHDI support.
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/find
+      - "{{ dextract.path }}/{{ item }}"
+      - -maxdepth
+      - 1
+      - -type
+      - f
+      - -fprintf
+      - "{{ dcdrom.path }}/dahdi-supported-{{ item }}.list"
+      - '%f\n'
+  loop:
+    - "linux"
+    - "linux-base"
+    - "linux-signed-amd64"

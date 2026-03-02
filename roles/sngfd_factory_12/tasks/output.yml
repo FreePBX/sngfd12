@@ -298,9 +298,18 @@
       - -map
       -   "{{ dcdrom.path }}/10-sngfd-file.sources"
       -   "10-sngfd-file.sources"
+      - "{{ (dir_deb_files == '') | ternary('', '-map') }}"
+      - "{{ (dir_deb_files == '') | ternary('', dcdrom.path ~ '/Packages-sngfd.gz') }}"
+      - "{{ (dir_deb_files == '') | ternary('', 'Packages-sngfd.gz') }}"
       - -map
-      -   "{{ dcdrom.path }}/Packages-sngfd.gz"
-      -   "Packages-sngfd.gz"
+      -   "{{ dcdrom.path }}/dahdi-supported-linux.list"
+      -   "dahdi-supported-linux.list"
+      - -map
+      -   "{{ dcdrom.path }}/dahdi-supported-linux-base.list"
+      -   "dahdi-supported-linux-base.list"
+      - -map
+      -   "{{ dcdrom.path }}/dahdi-supported-linux-signed-amd64.list"
+      -   "dahdi-supported-linux-signed-amd64.list"
       - -map
       -   "{{ dcdrom.path }}/sng_boot_all_command"
       -   "sng_boot_all_command"

@@ -252,6 +252,11 @@ systemctl disable sng-install-freepbx || true
 rm -f /var/tmp/sng_freepbx_debian_install.sh
 rm -f /usr/lib/systemd/system/sng-install-freepbx.service
 
+# strongly consider suggesting these to the user for removal post-install if space is at a premium
+#rm -f /var/tmp/*.deb
+#rm -f /var/tmp/*.udeb
+#rm -f /var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/*.deb
+
 # show the freepbx sysadmin info again
 echo "Output of 'fwconsole sa info':"
 fwconsole sa info || true
@@ -395,28 +400,6 @@ else
 	echo "/var/lib/tftpboot		/tftpboot	none	bind	0	0"	>> /target/etc/fstab
 fi
 
-if [ $spicelevel == "oso" ] || [ $spicelevel == "fog" ]; then
-	logger -t sng "NOT LOCKING the kernel on ${spicelevel}"
-else
-	logger -t sng "LOCKING the kernel on ${spicelevel}"
-	if [ -n "{{ str_locked_kernel }}" ]; then
-		logger -t sng "LOCKING the kernel to {{ str_locked_kernel }}"
-		# TODO: DAHDI building with DKMS so we can automatically match kernel updates (hmm, compiler)
-		# TODO: speed up the removal of the non-frozen kernel
-		#in-target apt-mark hold linux-image-{{ str_locked_kernel }}
-		# freeze right there kernel, DAHDI would like a word with you
-		# copy the kernel packages from cdrom to target
-		cp -a /cdrom/pool/main/l/linux/*.deb /target/var/tmp/
-		cp -a /cdrom/pool/main/l/linux-base/*.deb /target/var/tmp/
-		cp -a /cdrom/pool/main/l/linux-signed-amd64/*.deb /target/var/tmp/
-		cp -a /cdrom/pool/main/l/linux-signed-amd64/*.udeb /target/var/tmp/
-		gone=$(ls /target/boot/vmlinuz* | grep -v "{{ str_locked_kernel }}" | cut -f4 -d/ | sed 's/vmlinuz-//')
-		fishing=$(ls /target/var/tmp/linux-image* | grep "{{ str_locked_kernel }}" | cut -f3-8 -d/)
-		in-target apt-get -y remove linux-image-$gone || true
-		in-target apt-get -y install linux-image-{{ str_locked_kernel }} || in-target dpkg -i $fishing
-	fi
-fi
-
 # '{{ str_whoami }}' user can sudo
 # requires network at this late point because cdrom is unmounted (TODO: check if still the case)
 in-target apt-get -y install sudo || true
@@ -549,7 +532,63 @@ set -e
 if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
 	mkdir -p /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd
 	cp -a /cdrom/Packages-sngfd.gz /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/Packages.gz
-	cp -a /cdrom/packages-sngfd/*.deb /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/
+	if [ -z "${tftphost}" ]; then
+		cp -a /cdrom/packages-sngfd/*.deb /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/
+	else
+		logger -t sng "Downloading additional packages from Cobbler server"
+		zcat /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/Packages.gz | grep Filename | cut -f7 -d/ | sed "s|^|http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/packages-sngfd/|" > /target/tmp/packages-sngfd.urls
+		in-target wget -q -i /tmp/packages-sngfd.urls -P /var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/
+	fi
+fi
+
+# may need to lock the kernel for DAHDI
+if [ $spicelevel == "oso" ] || [ $spicelevel == "fog" ]; then
+	logger -t sng "DO NOT LOCK IN the kernel on ${spicelevel}"
+	in-target apt-get -y install linux-image-amd64
+else
+	logger -t sng "TRYING TO LOCK IN the kernel on ${spicelevel}"
+	if [ -z "{{ str_locked_kernel }}" ]; then
+		logger -t sng "COULD NOT LOCK IN the kernel on ${spicelevel}"
+		in-target apt-get -y install linux-image-amd64
+	else
+		# freeze right there kernel, DAHDI would like a word with you
+		logger -t sng "LOCK IN the kernel to {{ str_locked_kernel }}"
+		# TODO: DAHDI building with DKMS so we can automatically match kernel updates (hmm, compiler)
+
+		# copy the kernel packages from cdrom to target
+		cp -a /cdrom/pool/main/l/linux/*.deb /target/var/tmp/ || true
+		cp -a /cdrom/pool/main/l/linux-base/*.deb /target/var/tmp/ || true
+		cp -a /cdrom/pool/main/l/linux-signed-amd64/*.deb /target/var/tmp/ || true
+		cp -a /cdrom/pool/main/l/linux-signed-amd64/*.udeb /target/var/tmp/ || true
+
+		# only on PXE cobbler installs
+		if [ -n "${tftphost}" ] && [ -n "{{ str_cob_base }}" ]; then
+			logger -t sng "Downloading kernel packages from Cobbler server"
+			wget -q -O /cdrom/dahdi-supported-linux.list http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/dahdi-supported-linux.list || true
+			wget -q -O /cdrom/dahdi-supported-linux-base.list http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/dahdi-supported-linux-base.list || true
+			wget -q -O /cdrom/dahdi-supported-linux-signed-amd64.list http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/dahdi-supported-linux-signed-amd64.list || true
+			sed "s|^|http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/pool/main/l/linux/|" /cdrom/dahdi-supported-linux.list > /target/tmp/dahdi-supported-linux.urls
+			sed "s|^|http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/pool/main/l/linux-base/|" /cdrom/dahdi-supported-linux-base.list > /target/tmp/dahdi-supported-linux-base.urls
+			sed "s|^|http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/pool/main/l/linux-signed-amd64/|" /cdrom/dahdi-supported-linux-signed-amd64.list > /target/tmp/dahdi-supported-linux-signed-amd64.urls
+			in-target wget -q -i /tmp/dahdi-supported-linux.urls -P /var/tmp/
+			in-target wget -q -i /tmp/dahdi-supported-linux-base.urls -P /var/tmp/
+			in-target wget -q -i /tmp/dahdi-supported-linux-signed-amd64.urls -P /var/tmp/
+		fi
+
+		# prerequired manual packages (automatically included with linux-image-amd64)
+		in-target apt-get -y install \
+			apparmor \
+			busybox \
+			firmware-linux-free \
+			initramfs-tools \
+			initramfs-tools-core \
+			klibc-utils \
+			libklibc \
+			linux-base
+		# the locked kernel will almost always require manual dpkg install (since it won't be on the stock ISO)
+		fishing=$(ls /target/var/tmp/linux-image* | grep -m 1 "{{ str_locked_kernel }}" | cut -f3-8 -d/)
+		in-target apt-get -y install linux-image-{{ str_locked_kernel }} || in-target dpkg -i $fishing
+	fi
 fi
 
 in-target sync
