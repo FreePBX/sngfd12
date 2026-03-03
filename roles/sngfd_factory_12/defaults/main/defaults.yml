@@ -43,6 +43,7 @@ str_arch: "amd64"
 
 # Computed values
 str_script_build: "{{ '%y%m' | strftime }}.{{ str_script_bump }}"
+str_script_build_hyphen: "{{ str_script_build | regex_replace('\\.', '-') }}"
 str_script_build_fakedate: "20{{ str_script_build | split('.') | first }}{{ str_script_build | split('.') | last | regex_replace('^([1-9])$','0\\1') }}123456"
 str_script_source_date_epoch: "{{ (str_script_build_fakedate | to_datetime('%Y%m%d%H%M%S')).strftime('%s') }}"
 str_script_source_date_ecma119: "{{ str_script_build_fakedate }}00"

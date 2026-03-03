@@ -63,17 +63,19 @@ d-i apt-setup/cdrom/set-first boolean false
 d-i apt-setup/disable-cdrom-entries boolean true
 
 # Package selection via task groups.
-tasksel tasksel/first multiselect standard, web-server, ssh-server
+tasksel tasksel/first multiselect standard, ssh-server
 
-# TODO: Can we lock the kernel version here ?
-# does not seem to work this way in base-installer...
-#d-i base-installer/kernel/image select linux-image-{{ str_locked_kernel }}
+# Wait until late_command to install kernel (saves a few minutes ;-)
+d-i base-installer/kernel/image select none
+d-i base-installer/kernel/skip-install boolean true
+# Maybe...
+d-i anna/no_kernel_modules boolean true
 
-# TODO: Extra packages.
+# TODO: Extra packages. Probably not needed since we have a late preseed command.
 #d-i pkgsel/include string git ansible
 
 # TODO: Do not upgrade packages during initial installation.
-# But toggling these prevents upgrades on subsequent reboots.
+# But toggling this may prevent upgrades on subsequent reboots. (Really?)
 #d-i pkgsel/upgrade select none
 
 # TODO: automatic security updates
@@ -156,6 +158,7 @@ d-i partman/early_command string \
 	tftp -g -l /cdrom/freepbx-sangoma-apt-repo-pubkey.asc -r /{{ dn_cdrom }}/freepbx-sangoma-apt-repo-pubkey.asc ${tftphost}; \
 	tftp -g -l /cdrom/WARNING.txt -r /{{ dn_cdrom }}/WARNING.txt ${tftphost}; \
 	tftp -g -l /cdrom/sangoma-wallpaper-for-grub.png -r /{{ dn_cdrom }}/sangoma-wallpaper-for-grub.png ${tftphost}; \
+	tftp -g -l /cdrom/Packages-sngfd.gz -r /{{ dn_cdrom }}/Packages-sngfd.gz ${tftphost}; \
 	chmod 0555 /cdrom/sng_early_partman_all_command; \
 	chmod 0555 /cdrom/sng_late_all_command; \
 	sh /cdrom/sng_early_partman_all_command
