@@ -78,12 +78,15 @@ ExecStart=/usr/bin/env ASTVERSION=${asteriskversion} /usr/bin/bash /var/tmp/sng_
 # if not successful, then get ready to reboot and try again
 ExecStartPost=-/bin/sh -c 'latest_log=$\$(ls -t /var/log/pbx/*.log | head -1); grep -q "Finished FreePBX 17 installation process" \$latest_log'
 # if successful, only then will next command run to prevent reinstall on next boot
+ExecStartPost=echo "Disabling sng-install-freepbx service from next boot following good install"
 ExecStartPost=/usr/bin/systemctl disable sng-install-freepbx
 EOFO
 
 if [ "$spicelevel" == "int" ]; then
 	cat << EOFO2A >> /target/usr/lib/systemd/system/sng-install-freepbx.service
+ExecStartPost=echo "Configuring GRUB"
 ExecStartPost=cp /var/tmp/20-sangoma.cfg /etc/default/grub.d/
+ExecStartPost=echo "Updating GRUB"
 ExecStartPost=update-grub
 EOFO2A
 fi
@@ -91,8 +94,11 @@ fi
 if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
 	cat << EOFO2B >> /target/usr/lib/systemd/system/sng-install-freepbx.service
 #ExecStartPost=echo "Enabled: no" >> /etc/apt/sources.list.d/10-sngfd-file.sources
-ExecStartPost=sed -i 's/^deb \[allow-insecure=yes trusted=yes\] file/#&/' /etc/apt/sources.list
+ExecStartPost=echo "Disabling local repo"
+ExecStartPost=/usr/bin/bash -c 'sed -i "s/^deb \[allow-insecure=yes trusted=yes\] file/#&/" /etc/apt/sources.list'
+ExecStartPost=echo "Updating packages"
 ExecStartPost=apt-get update
+ExecStartPost=echo "Upgrading packages"
 ExecStartPost=apt-get -y upgrade
 EOFO2B
 fi
@@ -243,6 +249,7 @@ echo "Cleaning up installer bits."
 
 # purge apt-proxy and any other default/warehouse apt configs
 rm -f /etc/apt/apt.conf
+sed -i "s/^deb \[allow-insecure=yes trusted=yes\] file/#&/" /etc/apt/sources.list
 
 # only needed at first reboot
 systemctl disable sng-install-freepbx || true
@@ -531,20 +538,140 @@ set -e
 # copy additional package files (if any) to widened target for faster installations
 if [ $spicelevel != "oso" ] && [ $spicelevel != "fog" ] && [ -s /cdrom/Packages-sngfd.gz ]; then
 	mkdir -p /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd
-	cp -a /cdrom/Packages-sngfd.gz /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/Packages.gz
+	zcat /cdrom/Packages-sngfd.gz > /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/Packages
 	if [ -z "${tftphost}" ]; then
 		cp -a /cdrom/packages-sngfd/*.deb /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/
 	else
 		logger -t sng "Downloading additional packages from Cobbler server"
-		zcat /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/Packages.gz | grep Filename | cut -f7 -d/ | sed "s|^|http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/packages-sngfd/|" > /target/tmp/packages-sngfd.urls
+		grep "^Filename" /target/var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/Packages | cut -f7 -d/ | sed "s|^|http://${tftphost}/cobbler/links/{{ str_cob_base }}-x86_64/packages-sngfd/|" > /target/tmp/packages-sngfd.urls
 		in-target wget -q -i /tmp/packages-sngfd.urls -P /var/spool/packages-sngfd/dists/{{ str_deb_codename }}/main/binary-amd64/pool/sngfd/
 	fi
 fi
 
+# install a bunch of things at once to speed up the shell installer later on
+# (ripped these lines right out of the shell installer)
+# EXCEPTION: libtonezone
+in-target env PHPVERSION=8.2 apt-get -y install \
+	redis-server \
+	ghostscript \
+	libtiff-tools \
+	iptables-persistent \
+	net-tools \
+	rsyslog \
+	libavahi-client3 \
+	nmap \
+	apache2 \
+	zip \
+	incron \
+	wget \
+	vim \
+	openssh-server \
+	rsync \
+	mariadb-server \
+	mariadb-client \
+	bison \
+	flex \
+	flite \
+	php${PHPVERSION} \
+	php${PHPVERSION}-curl \
+	php${PHPVERSION}-zip \
+	php${PHPVERSION}-redis \
+	php${PHPVERSION}-cli \
+	php${PHPVERSION}-common \
+	php${PHPVERSION}-mysql \
+	php${PHPVERSION}-gd \
+	php${PHPVERSION}-mbstring \
+	php${PHPVERSION}-intl \
+	php${PHPVERSION}-xml \
+	php${PHPVERSION}-bz2 \
+	php${PHPVERSION}-ldap \
+	php${PHPVERSION}-sqlite3 \
+	php${PHPVERSION}-bcmath \
+	php${PHPVERSION}-soap \
+	php${PHPVERSION}-ssh2 \
+	php-pear \
+	curl \
+	sox \
+	mpg123 \
+	sqlite3 \
+	git \
+	uuid \
+	odbc-mariadb \
+	sudo \
+	subversion \
+	unixodbc \
+	nodejs \
+	npm \
+	ipset \
+	iptables \
+	fail2ban \
+	htop \
+	postfix \
+	tcpdump \
+	sngrep \
+	tftpd-hpa \
+	xinetd \
+	lame \
+	haproxy \
+	screen \
+	easy-rsa \
+	openvpn \
+	sysstat \
+	apt-transport-https \
+	lsb-release \
+	ca-certificates \
+ 	cron \
+ 	python3-mysqldb \
+ 	at \
+ 	avahi-daemon \
+ 	avahi-utils \
+	libnss-mdns \
+	mailutils \
+	liburiparser1 \
+	libavdevice59 \
+	python3-mysqldb \
+	python-is-python3 \
+	pkgconf \
+	libicu-dev \
+	libsrtp2-1 \
+	libspandsp2 \
+	libncurses5 \
+	autoconf \
+	libical3 \
+	libneon27 \
+	libsnmp40 \
+	libbluetooth3 \
+	libunbound8 \
+	libsybdb5 \
+	libspeexdsp1 \
+	libiksemel3 \
+	libresample1 \
+	libgmime-3.0-0 \
+	libc-client2007e \
+	imagemagick
+
+# extra cloud things
+if [ $spicelevel == "fog" ]; then
+	logger -t sng "Additional cloud utilities on ${spicelevel}"
+	in-target apt-get -y install cloud-init cloud-utils
+fi
+
+# consider the free and non-free firmware
+if [ $spicelevel == "oso" ]; then
+	logger -t sng "Use free firmware only on ${spicelevel}"
+	in-target apt-get -y install firmware-linux-free
+else
+	logger -t sng "Use all available firmware on ${spicelevel}"
+	in-target apt-get -y install firmware-linux
+fi
+
 # may need to lock the kernel for DAHDI
-if [ $spicelevel == "oso" ] || [ $spicelevel == "fog" ]; then
+if [ $spicelevel == "oso" ]; then
 	logger -t sng "DO NOT LOCK IN the kernel on ${spicelevel}"
 	in-target apt-get -y install linux-image-amd64
+elif [ $spicelevel == "fog" ]; then
+	logger -t sng "DO NOT LOCK IN the kernel on ${spicelevel} but use special cloud image"
+	in-target apt-get -y install linux-image-cloud-amd64
 else
 	logger -t sng "TRYING TO LOCK IN the kernel on ${spicelevel}"
 	if [ -z "{{ str_locked_kernel }}" ]; then
@@ -579,7 +706,6 @@ else
 		in-target apt-get -y install \
 			apparmor \
 			busybox \
-			firmware-linux-free \
 			initramfs-tools \
 			initramfs-tools-core \
 			klibc-utils \

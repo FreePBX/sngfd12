@@ -63,7 +63,7 @@ d-i apt-setup/cdrom/set-first boolean false
 d-i apt-setup/disable-cdrom-entries boolean true
 
 # Package selection via task groups.
-tasksel tasksel/first multiselect standard, web-server, ssh-server
+tasksel tasksel/first multiselect standard, ssh-server
 
 # Wait until late_command to install kernel (saves a few minutes ;-)
 d-i base-installer/kernel/image select none
