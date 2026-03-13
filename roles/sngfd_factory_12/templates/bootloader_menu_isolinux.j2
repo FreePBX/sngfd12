@@ -1,176 +1,132 @@
-menu hshift 2
-menu width 70
-menu title {{ str_our_full_name }} BIOS Installer menu
+{# The choice JINJA2 macro builds the final choice command line. #}
+{# Parameters: #}
+{# _opt     the shortcut key, probably a number 1-5 #}
+{# _spice   Spice level, three upper case letters #}
+{# _astver  Asterisk version number #}
+{# _test    Set to 'test' to use FreePBX test package repository #}
+{# _serial  Set to 'serial' to make I/O over the serial port #}
+{# _disk    Set to 'slab' to make swap plus one boot and one large root partition #}
+{% macro choice(_opt, _spice, _astver, _test='', _serial='', _disk='') -%}
+{% set localized = "" %}
+{% if _spice == "UPG" or _spice == "INT" %}
+{% set localized = "locale=en_US language=en country=US keymap=us" %}
+{% endif %}
+            label autofpbx{{ _test }}{{ _serial }}{{ _disk }}{{ _spice|lower }}{{ _astver }}
+                menu label ^{{ _opt }} YES WIPE DISKS AND INSTALL "{{ _spice }}" {{ (_test|upper ~ ' ' ~ _serial|upper ~ ' ' ~ _disk|upper)|trim }}
+                kernel /install.amd/vmlinuz
+                append spicelevel={{ _spice|lower }} fpbxrepo={{ _test|default('prod',true) }} asteriskversion={{ _astver }} initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} {% if _serial == '' %}vga=788{% else %}console=tty0 console=ttyS0,115200n8{% endif %} {% if _disk != '' %}sngdiskrecipe={{ _disk }}{% endif %} --- quiet
+                text help
+    WARNING: The installer will wipe all your disks automatically.
+    {% if _disk == '' %}MINIMUM DISK SIZE: 40G PUB, FOG, OSO, UPG // 100G INT, RAID1{% else %}SLAB disk only makes boot, root and swap partitions{% endif %}.
+    LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
+    {% if _serial != '' %}SERIAL option will send and receive control on the serial port{% else %}Visit our forums https://community.freepbx.org for free help{% endif %}.
+    Version: {{ str_script_version }}    Build: {{ str_script_build }}
+                endtext
+
+{%- endmacro %}
+
 include stdmenu.cfg
-menu begin basicfpbx
-	menu label ^Basic FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
-		menu title Basic FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
-		include stdmenu.cfg
-		label mainmenubasic
-			menu label ^Back...
-			menu exit
-{% set localized = "" %}
-{% for spice in ["PUB", "FOG"] %}
-{% if spice == "UPG" or spice == "INT" %}
-	{% set localized = "locale=en_US language=en country=US keymap=us" %}
+menu hshift 0
+menu width 70
+menu helpmsgrow 16
+
+menu title {{ str_our_full_name }} BIOS Installer menu
+
+label howdy
+    menu label "Howdy!" says ^Tango the FreePBX mascot :-)
+    text help
+    FreePBX installs best when your network uses DHCP with DNS.
+    Machine will reboot twice during the appx. 20 minute install.
+    LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
+    WARNING: The installer will wipe all your disks automatically.
+    WARNING: Any USB drives over 100G will become RAID1 members.
+    endtext
+
+menu begin beginfreepbxmenu
+    menu title Choose installer spice level for FreePBX {{ str_freepbx_version }}
+    menu label ^Begin FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
+
+    label mainmenubegin
+        menu label ^Back...
+        menu exit
+        text help
+    PUB: For the PUBlic - start here if new.
+    FOG: For clouds and other virtualizations.
+    OSO: Open Source Only - AKA "bear mode".
+    UPG: For UPGrades on physical devices.
+    INT: INTernal Sangoma use on new appliances.
+        endtext
+
+{% for spice in ["PUB", "FOG", "OSO", "UPG", "INT"] %}
+    menu begin {{ spice }}menu
+        menu title Choose initial Asterisk version
+        menu label "^{{ spice }}" spice
+
+        label mainmenu{{ spice|lower }}
+            menu label ^Back...
+            menu exit
+            text help
+    18: Long Term Support EOL 2025-10-20
+    20: Long Term Support EOL 2027-10-19
+    21: Standard release  EOL 2026-10-18
+    22: Long Term Support EOL 2029-10-16
+    23: Standard release  EOL 2027-10-15
+            endtext
+
+{% for astver in ["18", "20", "21", "22", "23"] %}
+{% if not (spice == "INT" and not astver == "22") %}
+        menu begin {{ spice }}{{ astver }}menu
+            menu title Install "{{ spice }}" FreePBX {{ str_freepbx_version }} with Asterisk {{ astver }}
+            menu label Install "{{ spice }}" FreePBX {{ str_freepbx_version }} with Asterisk {{ astver[0] }}^{{ astver[-1] }}
+
+            label mainmenu{{ spice|lower }}{{ astver }}
+                menu label ^Back...
+                menu exit
+                text help
+    WARNING: The installer will wipe all your disks automatically.
+    WARNING: The installer will wipe all your disks automatically.
+    WARNING: Any USB drives over 100G will become RAID1 members.
+    WARNING: Any USB drives over 100G will become RAID1 members.
+    Version: {{ str_script_version }}    Build: {{ str_script_build }}
+                endtext
+
+{{ choice('1', spice, astver) }}
+{{ choice('2', spice, astver, '', 'serial') }}
+{{ choice('3', spice, astver, '', '', 'slab') }}
+{{ choice('4', spice, astver, '', 'serial', 'slab') }}
+{{ choice('5', spice, astver, 'test') }}
+        menu end
+
 {% endif %}
-menu begin spice{{ spice|lower }}
-	menu label Auto FreePBX {{ str_freepbx_version }} "^{{ spice }}" install {{ str_script_version }}
-		menu title Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" disk wipe install
-		include stdmenu.cfg
-		label mainmenu{{ spice|lower }}
-			menu label ^Back...
-			menu exit
-		label autofpbx{{ spice|lower }}
-			menu label ^YES WIPE MY DISKS AND INSTALL "{{ spice }}"
-			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} fpbxrepo=prod initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-			text help
+{% endfor %}
+    menu end
 
-
-	WARNING: The installer will wipe all your disks automatically.
-	MINIMUM DISK SIZE: 30G PUB or FOG // 100G RAID1
-	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
-
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-			endtext
-		label autofpbxserial{{ spice|lower }}
-			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^SERIAL)
-			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} fpbxrepo=prod initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-			text help
-
-
-	WARNING: The installer will wipe all your disks automatically.
-	MINIMUM DISK SIZE: 30G PUB or FOG // 100G RAID1
-	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
-	This option will send and receive control on the serial port.
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-			endtext
-		label autofpbxtest{{ spice|lower }}
-			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^TEST)
-			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} fpbxrepo=test initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-			text help
-
-
-	WARNING: The installer will wipe all your disks automatically.
-	MINIMUM DISK SIZE: 30G PUB or FOG // 100G RAID1
-	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
-
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-			endtext
-		label autofpbxtestserial{{ spice|lower }}
-			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (SERIAL T^EST)
-			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} fpbxrepo=test initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-			text help
-
-
-	WARNING: The installer will wipe all your disks automatically.
-	MINIMUM DISK SIZE: 30G PUB or FOG // 100G RAID1
-	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
-	This option will send and receive control on the serial port.
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-			endtext
-menu end
 {% endfor %}
 menu end
-menu begin advancedfpbx
-	menu label ^Advanced FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
-		menu title Advanced FreePBX {{ str_freepbx_version }} install {{ str_script_version }}
-		include stdmenu.cfg
-		label mainmenuadvanced
-			menu label ^Back...
-			menu exit
-{% set localized = "" %}
-{% for spice in ["OSO", "UPG", "INT"] %}
-{% if spice == "UPG" or spice == "INT" %}
-	{% set localized = "locale=en_US language=en country=US keymap=us" %}
-{% endif %}
-menu begin spice{{ spice|lower }}
-	menu label Auto FreePBX {{ str_freepbx_version }} "^{{ spice }}" install {{ str_script_version }}
-		menu title Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" disk wipe install
-		include stdmenu.cfg
-		label mainmenu{{ spice|lower }}
-			menu label ^Back...
-			menu exit
-		label autofpbx{{ spice|lower }}
-			menu label ^YES WIPE MY DISKS AND INSTALL "{{ spice }}"
-			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} fpbxrepo=prod initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-			text help
 
-
-	WARNING: The installer will wipe all your disks automatically.
-	MINIMUM DISK SIZE: 30G OSO / 40G UPG / 90G INT // 100G RAID1
-	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
-
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-			endtext
-		label autofpbxserial{{ spice|lower }}
-			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^SERIAL)
-			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} fpbxrepo=prod initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-			text help
-
-
-	WARNING: The installer will wipe all your disks automatically.
-	MINIMUM DISK SIZE: 30G OSO / 40G UPG / 90G INT // 100G RAID1
-	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
-	This option will send and receive control on the serial port.
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-			endtext
-		label autofpbxtest{{ spice|lower }}
-			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (^TEST)
-			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} fpbxrepo=test initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-			text help
-
-
-	WARNING: The installer will wipe all your disks automatically.
-	MINIMUM DISK SIZE: 30G OSO / 40G UPG / 90G INT // 100G RAID1
-	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
-
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-			endtext
-		label autofpbxtestserial{{ spice|lower }}
-			menu label YES WIPE MY DISKS AND INSTALL "{{ spice }}" (T^EST SERIAL)
-			kernel /install.amd/vmlinuz
-			append spicelevel={{ spice|lower }} fpbxrepo=test initrd=/install.amd/initrd.gz auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-			text help
-
-
-	WARNING: The installer will wipe all your disks automatically.
-	MINIMUM DISK SIZE: 30G OSO / 40G UPG / 90G INT // 100G RAID1
-	LEGACY BOOT DETECTED: RAID1 only works in UEFI mode. Check BIOS.
-	This option will send and receive control on the serial port.
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-			endtext
-menu end
-{% endfor %}
-menu end
 label rescue
-	menu label ^Rescue mode
-	kernel /install.amd/vmlinuz
-	append vga=788 initrd=/install.amd/initrd.gz rescue/enable=true
+    menu label ^Rescue mode
+    kernel /install.amd/vmlinuz
+    append vga=788 initrd=/install.amd/initrd.gz rescue/enable=true
+    text help
+    Attempt to recover your system in rescue mode.
+    endtext
+
 label rescueserial
-	menu label R^escue mode (SERIAL)
-	kernel /install.amd/vmlinuz
-	append initrd=/install.amd/initrd.gz rescue/enable=true console=tty0 console=ttyS0,115200n8
-	text help
+    menu label R^escue mode (SERIAL)
+    kernel /install.amd/vmlinuz
+    append initrd=/install.amd/initrd.gz rescue/enable=true console=tty0 console=ttyS0,115200n8
+    text help
+    Attempt to recover your system in rescue mode.
+    SERIAL will send and receive control on the serial port.
+    endtext
 
-
-	This option will send and receive control on the serial port.
-	endtext
 label help
-	menu label ^Help tips
-	text help
-
-
-	Heads up - this is the old BIOS installer. Instead, you might
-	try the UEFI installer. (Check your BIOS.) And take a backup!
-	PUB is for the PUBlic. FOG for cloud. Good if new to FreePBX.
-	WARNING: The installer will wipe all your disks automatically.
-	Version: {{ str_script_version }}    Build: {{ str_script_build }}
-	endtext
+    menu label ^Help tips
+    text help
+    Heads up - this is the old BIOS installer. Instead, you might
+    try the UEFI installer. (Check your BIOS.) And take a backup!
+    Visit our forums https://community.freepbx.org for free help.
+    WARNING: The installer will wipe all your disks automatically.
+    Version: {{ str_script_version }}    Build: {{ str_script_build }}
+    endtext
