@@ -32,7 +32,7 @@ pvremove -f -f -y /dev/md5 /dev/md6 /dev/md7 /dev/md8 /dev/md9 || true
 sync
 
 logger -t sng "REMOVING PARTITIONS FROM RAID ARRAYS"
-for disk in $(list-devices disk | grep -e 'da$' -e 'db$' -e 'dc$' -e 'dd$' -e 'de$' | cut -f3 -d/); do
+for disk in $(list-devices disk | grep -e 'd[a-e]$' -e 'nvme[0-9]n[0-9]$' | cut -f3 -d/); do
 	for partition in $(list-devices partition | grep $disk); do
 		for raid in 0 1 2 3 4 5 6 7 8 9; do
 			mdadm --fail /dev/md${raid} ${partition} || true
@@ -53,7 +53,7 @@ for raid in 0 1 2 3 4 5 6 7 8 9; do
 done
 sync
 
-for disk in $(list-devices disk | grep -e 'da$' -e 'db$' | cut -f3 -d/); do
+for disk in $(list-devices disk | grep -e 'd[a-b]$' -e 'nvme[0-9]n[0-9]$' | cut -f3 -d/); do
 	logger -t sng "INSPECTING disk ${disk}"
 	size=$(cat /sys/block/${disk}/size)
 	logger -t sng "SIZE disk ${disk} is ${size}"
@@ -82,7 +82,7 @@ done
 sync
 
 logger -t sng "AGAIN REMOVING PARTITIONS FROM RAID ARRAYS"
-for disk in $(list-devices disk | grep -e 'da$' -e 'db$' -e 'dc$' -e 'dd$' -e 'de$' | cut -f3 -d/); do
+for disk in $(list-devices disk | grep -e 'd[a-e]$' -e 'nvme[0-9]n[0-9]$' | cut -f3 -d/); do
 	for partition in $(list-devices partition | grep $disk); do
 		for raid in 0 1 2 3 4 5 6 7 8 9; do
 			mdadm --fail /dev/md${raid} ${partition} || true

@@ -516,6 +516,11 @@ fi
 
 # most of what is left goes to the spool
 lvresize -l +90%FREE /dev/mapper/pbxvg0-lvvarspool
+
+# except if using slab disk recipe with only boot and root
+if [ $sngdiskrecipe == "slab" ]; then
+    lvresize -l +100%FREE /dev/mapper/pbxvg0-lvroot
+fi
 set -e
 
 sync
