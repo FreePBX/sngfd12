@@ -1,3 +1,38 @@
+{# The choice JINJA2 macro builds the final choice command line. #}
+{# Parameters: #}
+{# _opt     the shortcut key, probably a number 1-5 #}
+{# _spice   Spice level, three upper case letters #}
+{# _astver  Asterisk version number #}
+{# _test    Set to 'test' to use FreePBX test package repository #}
+{# _serial  Set to 'serial' to make I/O over the serial port #}
+{# _disk    Set to 'slab' to make swap plus one boot and one large root partition #}
+{% macro choice(_opt, _spice, _astver, _test='', _serial='', _disk='') -%}
+{% set localized = "" %}
+{% if _spice == "UPG" or _spice == "INT" %}
+{% set localized = "locale=en_US language=en country=US keymap=us" %}
+{% endif %}
+            submenu "INSTALL AND WIPE DISKS '{{ _spice }}' {{ (_test|upper ~ ' ' ~ _serial|upper ~ ' ' ~ _disk|upper)|trim }}" --hotkey={{ _opt }} {
+                menuentry "(Press Escape to go Back) f{{ str_freepbx_version }} a{{ astver }} d{{ str_script_version }}" {
+                    echo ""
+                    play {{ tangotune }}
+                }
+                menuentry "YES, I confirm, wipe disks and install '{{ _spice }}' {{ (_test|upper ~ ' ' ~ _serial|upper ~ ' ' ~ _disk|upper)|trim }}" --hotkey=y {
+                    echo ""
+                    echo "Installation about to begin..."
+                    echo ""
+                    echo "THIRTY SECONDS UNTIL ALL DATA WILL BE ERASED FROM YOUR DISKS!"
+                    echo "*This includes any USB drives larger than appx. 100 GB.*"
+                    echo "Power off now if unsure."
+                    echo ""
+                    echo "f{{ str_freepbx_version }} a{{ _astver }} d{{ str_script_version }} '{{ _spice }}' {{ (_test|upper ~ ' ' ~ _serial|upper ~ ' ' ~ _disk|upper)|trim }}"
+                    echo ""
+                    sleep --verbose 30
+                    linux   /install.amd/vmlinuz spicelevel={{ _spice|lower }} fpbxrepo={{ _test|default('prod',true) }} asteriskversion={{ _astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} {% if _serial == '' %}vga=788{% else %}console=tty0 console=ttyS0,115200n8{% endif %} {% if _disk != '' %}sngdiskrecipe={{ _disk }}{% endif %} --- quiet
+                    initrd  /install.amd/initrd.gz
+                }
+            }
+{%- endmacro %}
+{% set tangotune = "600 800 1 600 1 700 1 500 1 300 1 0 1 900 1" %}
 if [ x$feature_default_font_path = xy ] ; then
    font=unicode
 else
@@ -18,17 +53,17 @@ fi
 
 if background_image /isolinux/splash.png; then
   set color_normal=light-gray/black
-  set color_highlight=white/black
+  set color_highlight=light-green/black
 elif background_image /splash.png; then
   set color_normal=light-gray/black
-  set color_highlight=white/black
+  set color_highlight=light-green/black
 else
   set color_normal=light-gray/black
-  set color_highlight=white/black
+  set color_highlight=light-green/black
 fi
 
 insmod play
-play 600 800 1 600 1 700 1 500 1 300 1 0 1 900 1
+play {{ tangotune }}
 set theme=/boot/grub/theme/1
 
 serial --unit=0 --speed=115200
@@ -36,217 +71,175 @@ terminal_input --append serial
 terminal_output --append serial
 
 set menu_color_normal=white/black
-set menu_color_highlight=yellow/black
+set menu_color_highlight=light-green/black
 set color_normal=white/black
-set color_highlight=yellow/black
+set color_highlight=light-green/black
 set background_color=black
 
-submenu --hotkey=b 'Basic FreePBX {{ str_freepbx_version }} install {{ str_script_version }}' {
-    menuentry --hotkey=p '(Press Escape to go Back)' {
+menuentry "FreePBX {{ str_freepbx_version }} Distro {{ str_script_version }}" --hotkey=b {
+    echo ""
+    echo "Tango the frog our FreePBX mascot wants you to hop over to"
+    echo "our community forums for free help, tips, and discussion at:"
+    echo ""
+    echo "          https://community.freepbx.org"
+    echo ""
+    echo "Kit the robot our Asterisk mascot suggests you transport to"
+    echo "our annual physical Asterisk community meeting, AstriCon:"
+    echo ""
+    echo "          https://astricon.net"
+    echo ""
+    echo "And your friends at Sangoma want to thank you for using FreePBX!"
+    echo ""
+    echo "          https://sangoma.com"
+    echo ""
+    play {{ tangotune }}
+    sleep --verbose --interruptible 30
+}
+
+{% set spice = 'INT' %}
+{% set astver = '22' %}
+submenu "Advanced INTernal Sangoma Install" --hotkey=a {
+    menuentry "(Press Escape to go Back) f{{ str_freepbx_version }} a{{ astver }} d{{ str_script_version }}" {
         echo ""
+        play {{ tangotune }}
     }
-    {% set localized = "" %}
-    {% for spice in ["PUB", "FOG"] %}
-        {% for astver in [21,22] %}
-            {% if spice == "UPG" or spice == "INT" %}
-                {% set localized = "locale=en_US language=en country=US keymap=us" %}
-            {% endif %}
+{{ choice('i', spice, astver) }}
+{{ choice('s', spice, astver, '', 'serial') }}
+{{ choice('l', spice, astver, '', '', 'slab') }}
+{{ choice('r', spice, astver, '', 'serial', 'slab') }}
+{{ choice('t', spice, astver, 'test') }}
+}
 
-            {% set base_hotkey = spice|lower|first %}
-            {% if astver == 21 %}
-                {% set hotkey = base_hotkey %}
-            {% else %}
-                {% set hotkey = base_hotkey.upper() %}
-            {% endif %}
-
-            submenu --hotkey={{ hotkey }} 'Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" install {{ str_script_version }} with Asterisk {{ astver }}' {
-                menuentry --hotkey=p '(Press Escape to go Back)' {
-                    echo ""
-                }
-                menuentry --hotkey=y 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}"' {
-                    linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod asteriskversion={{ astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-                    initrd   /install.amd/initrd.gz
-                }
-                menuentry --hotkey=s 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (SERIAL)' {
-                    linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod asteriskversion={{ astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-                    initrd   /install.amd/initrd.gz
-                }
-                menuentry --hotkey=t 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST)' {
-                    linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test asteriskversion={{ astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-                    initrd   /install.amd/initrd.gz
-                }
-                menuentry --hotkey=e 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST SERIAL)' {
-                    linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test asteriskversion={{ astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-                    initrd   /install.amd/initrd.gz
-                }
+submenu "Other installation options" --hotkey=o {
+{% for spice in ["PUB", "FOG", "OSO", "UPG"] %}
+    submenu "Spice Level '{{ spice }}'" --hotkey={{ spice[0]|lower }} {
+{% for astver in ["18", "20", "21", "22", "23"] %}
+        submenu "Asterisk version {{ astver }}" --hotkey={{ astver[-1] }} {
+            menuentry "(Press Escape to go Back) f{{ str_freepbx_version }} a{{ astver }} d{{ str_script_version }}" {
+                echo ""
+                play {{ tangotune }}
             }
-        {% endfor %}
-    {% endfor %}
-    menuentry '.........................' {
-        echo ""
+{{ choice('i', spice, astver) }}
+{{ choice('s', spice, astver, '', 'serial') }}
+{{ choice('l', spice, astver, '', '', 'slab') }}
+{{ choice('r', spice, astver, '', 'serial', 'slab') }}
+{{ choice('t', spice, astver, 'test') }}
+        }
+{% endfor %}
     }
-    menuentry 'PUB is for the PUBlic. MINIMUM DISK 30G.' {
-        echo ""
+{% endfor %}
+}
+
+submenu "Troubleshooting" --hotkey=t {
+    menuentry "Rescue mode" --hotkey=r {
+        linux   /install.amd/vmlinuz rescue/enable=true
+        initrd  /install.amd/initrd.gz
     }
-    menuentry 'PUB installs with DAHDI and matched kernel.' {
-        echo ""
+    menuentry "Rescue mode (VGA)" --hotkey=v {
+        linux   /install.amd/vmlinuz vga=788 rescue/enable=true
+        initrd  /install.amd/initrd.gz
     }
-    menuentry 'PUB displays the randomly generated password for the {{ str_whoami }} user.' {
-        echo ""
+    menuentry "Rescue mode (SERIAL)" --hotkey=s {
+        linux   /install.amd/vmlinuz rescue/enable=true console=tty0 console=ttyS0,115200n8
+        initrd  /install.amd/initrd.gz
     }
-    menuentry '.........................' {
-        echo ""
+    menuentry "Install stock Debian {{ str_deb_version_full }} without preseed" --hotkey=p {
+        linux   /install.amd/vmlinuz
+        initrd  /install.amd/initrd.gz
     }
-    menuentry 'FOG is for the cloud. MINIMUM DISK 30G.' {
-        echo ""
+    menuentry "Install stock Debian {{ str_deb_version_full }} without preseed (SERIAL)" --hotkey=i {
+        linux   /install.amd/vmlinuz console=tty0 console=ttyS0,115200n8
+        initrd  /install.amd/initrd.gz
     }
-    menuentry 'FOG installs without DAHDI or matched kernel.' {
-        echo ""
+    menuentry "Linux on sda1" --hotkey=a {
+        set     root=(hd0,1)
+        linux   /boot/vmlinuz root=/dev/sda1 ro
+        initrd  /boot/initrd.img
     }
-    menuentry 'FOG displays the randomly generated password for the {{ str_whoami }} user.' {
-        echo ""
+    menuentry "Linux on sdb1" --hotkey=b {
+        set     root=(hd1,1)
+        linux   /boot/vmlinuz root=/dev/sdb1 ro
+        initrd  /boot/initrd.img
+    }
+    menuentry "Linux on nvme0n1" --hotkey=n {
+        set     root=(hd0,1)
+        linux   /boot/vmlinuz root=/dev/nvme0n1 ro
+        initrd  /boot/initrd.img
+    }
+    menuentry "Chainload on disk 1" --hotkey=h {
+        insmod  chain
+        set     root=(hd0)
+        chainloader +1
+    }
+    menuentry "Chainload on disk 2" --hotkey=o {
+        insmod  chain
+        set     root=(hd1)
+        chainloader +1
     }
 }
 
-submenu --hotkey=a 'Advanced FreePBX {{ str_freepbx_version }} install {{ str_script_version }}' {
-    menuentry --hotkey=p '(Press Escape to go Back)' {
-        echo ""
-    }
-    {% set localized = "" %}
-    {% for spice in ["OSO", "UPG", "INT"] %}
-        {% if spice == "INT" %}
-            {% set localized = "locale=en_US language=en country=US keymap=us" %}
-            submenu --hotkey={{ spice|lower|first }} 'Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" install {{ str_script_version }}' {
-                menuentry --hotkey=p '(Press Escape to go Back)' {
-                    echo ""
-                }
-                menuentry --hotkey=y 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}"' {
-                    linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod asteriskversion=22 auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-                    initrd   /install.amd/initrd.gz
-                }
-                menuentry --hotkey=s 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (SERIAL)' {
-                    linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod asteriskversion=22 auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-                    initrd   /install.amd/initrd.gz
-                }
-                menuentry --hotkey=t 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST)' {
-                    linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test asteriskversion=22 auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-                    initrd   /install.amd/initrd.gz
-                }
-                menuentry --hotkey=e 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST SERIAL)' {
-                    linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test asteriskversion=22 auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-                    initrd   /install.amd/initrd.gz
-                }
-            }
-        {% else %}
-            {% for astver in [21,22] %}
-                {% if spice == "UPG" %}
-                    {% set localized = "locale=en_US language=en country=US keymap=us" %}
-                {% endif %}
-
-                {% set base_hotkey = spice|lower|first %}
-                {% if astver == 21 %}
-                    {% set hotkey = base_hotkey %}
-                {% else %}
-                    {% set hotkey = base_hotkey.upper() %}
-                {% endif %}
-
-                submenu --hotkey={{ hotkey }} 'Auto FreePBX {{ str_freepbx_version }} "{{ spice }}" install {{ str_script_version }} with Asterisk {{ astver }}' {
-                    menuentry --hotkey=p '(Press Escape to go Back)' {
-                        echo ""
-                    }
-                    menuentry --hotkey=y 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}"' {
-                        linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod asteriskversion={{ astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-                        initrd   /install.amd/initrd.gz
-                    }
-                    menuentry --hotkey=s 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (SERIAL)' {
-                        linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=prod asteriskversion={{ astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-                        initrd   /install.amd/initrd.gz
-                    }
-                    menuentry --hotkey=t 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST)' {
-                        linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test asteriskversion={{ astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} vga=788 --- quiet
-                        initrd   /install.amd/initrd.gz
-                    }
-                    menuentry --hotkey=e 'YES AUTOMATICALLY WIPE MY DISK AND INSTALL "{{ spice }}" (TEST SERIAL)' {
-                        linux    /install.amd/vmlinuz spicelevel={{ spice|lower }} fpbxrepo=test asteriskversion={{ astver }} auto=true file=/cdrom/preseed.cfg dmraid=false priority=critical interface=auto {{ localized }} console=tty0 console=ttyS0,115200n8 --- quiet
-                        initrd   /install.amd/initrd.gz
-                    }
-                }
-            {% endfor %}
-        {% endif %}
-    {% endfor %}
-    menuentry '.........................' {
-        echo ""
-    }
-    menuentry 'OSO is Open Source Only. MINIMUM DISK 30G.' {
-        echo ""
-    }
-    menuentry 'OSO installs without DAHDI or matched kernel.' {
-        echo ""
-    }
-    menuentry 'OSO uses FreePBX opensourceonly option.' {
-        echo ""
-    }
-    menuentry 'OSO displays the randomly generated password for the {{ str_whoami }} user.' {
-        echo ""
-    }
-    menuentry '.........................' {
-        echo ""
-    }
-    menuentry 'UPG is for UPGrading existing Sangoma appliances. MINIMUM DISK 40G.' {
-        echo ""
-    }
-    menuentry 'UPG uses DAHDI and matched kernel.' {
-        echo ""
-    }
-    menuentry 'UPG locks swap to {{ int_mb_swap_existing }}M and lets you pick password for {{ str_whoami }} user.' {
-        echo ""
-    }
-    menuentry '.........................' {
-        echo ""
-    }
-    menuentry 'INT is for INTernal factory new Sangoma appliances. MINIMUM DISK 90G.' {
-        echo ""
-    }
-    menuentry 'INT uses DAHDI and matched kernel.' {
-        echo ""
-    }
-    menuentry 'INT locks swap to {{ int_mb_swap_warehouse }}M and sets {{ str_whoami }} user password to {{ str_old_user_pass }}' {
-        echo ""
-    }
-}
-
-menuentry --hotkey=r 'Rescue mode' {
-    linux    /install.amd/vmlinuz vga=788 rescue/enable=true
-    initrd   /install.amd/initrd.gz
-}
-
-menuentry --hotkey=s 'Rescue mode (SERIAL)' {
-    linux    /install.amd/vmlinuz rescue/enable=true console=tty0 console=ttyS0,115200n8
-    initrd   /install.amd/initrd.gz
-}
-
-menuentry --hotkey=h 'Help tips' {
+submenu "Help" --hotkey=h {
+    menuentry "Tips" --hotkey=t {
     echo ""
     echo "WARNING: The installer will wipe all your disks automatically."
     echo "         Did you take a backup of any important existing data ?"
     echo ""
-    echo "RAID1 is automatic on disks > ~100G -- make sure you use a smaller USB"
+    echo "RAID1 is automatic on disks over 100G -- please use only small USB"
     echo "to install from; otherwise, it will become part of the RAID array."
-    echo "Disk minimums: PUB,OSO,FOG>30G  UPG>40G  INT>90G"
-    echo "PUB is for the PUBlic. FOG for cloud. Good if new to FreePBX."
+    echo ""
+    echo "Disk minimums: 40G for PUB,OSO,FOG,UPG and 100G for INT,RAID"
+    echo ""
     echo "The SERIAL options will send and receive control on the serial port."
+    echo "The SLAB options will make only boot, root and swap partitions."
     echo ""
     echo "Please visit https://FreePBX.org for more detailed information."
     echo ""
-    echo "Script Name: {{ str_script_name }}"
-    echo "Script Build: {{ str_script_build }}"
-    echo "Script Version: {{ str_script_version }}"
-    echo "FreePBX Version: {{ str_freepbx_version }}"
-    echo "Spiciness: {{ str_spice }}"
-    echo "SFPBX output ISO: {{ fn_iso_output }}"
+    echo "Distro Version: {{ str_script_version }}"
+    echo "ISO Name: {{ fn_iso_output }}"
     echo ""
     echo "Press ESCAPE to go back to the main installer menu"
     sleep --verbose --interruptible 60
+    }
+
+    menuentry "Spice level information" --hotkey=s {
+    echo ""
+    echo "PUB is for the PUBlic. MINIMUM DISK 40G."
+    echo "PUB installs with DAHDI and matched kernel."
+    echo "PUB displays the randomly generated password for the {{ str_whoami }} user."
+    echo ""
+    echo "FOG is for the cloud. MINIMUM DISK 40G."
+    echo "FOG installs without DAHDI or matched kernel."
+    echo "FOG displays the randomly generated password for the {{ str_whoami }} user."
+    echo ""
+    echo "OSO is Open Source Only. MINIMUM DISK 40G."
+    echo "OSO installs without DAHDI or matched kernel."
+    echo "OSO uses FreePBX opensourceonly option."
+    echo "OSO displays the randomly generated password for the {{ str_whoami }} user."
+    echo ""
+    echo "UPG is for UPGrading existing Sangoma appliances. MINIMUM DISK 40G."
+    echo "UPG uses DAHDI and matched kernel."
+    echo "UPG locks swap to {{ int_mb_swap_existing }}M and lets you pick password for {{ str_whoami }} user."
+    echo ""
+    echo "INT is for INTernal factory new Sangoma appliances. MINIMUM DISK 100G."
+    echo "INT uses DAHDI and matched kernel."
+    echo "INT locks swap to {{ int_mb_swap_warehouse }}M and sets {{ str_whoami }} user password to {{ str_old_user_pass }}"
+    echo ""
+    echo "Press ESCAPE to go back to the main installer menu"
+    sleep --verbose --interruptible 60
+    }
+    menuentry "Read README.txt" --hotkey=r {
+        cat /README.txt
+        sleep --verbose --interruptible 60
+    }
+    menuentry "Read WARNING.txt" --hotkey=w {
+        cat /WARNING.txt
+        sleep --verbose --interruptible 60
+    }
+    menuentry "Read summary EULA.txt now - Read full https://Sangoma.com/legal on your own" --hotkey=u {
+        cat /EULA.txt
+        sleep --verbose --interruptible 60
+    }
 }
-set default=saved
+
+#set default=saved
 set timeout=-1

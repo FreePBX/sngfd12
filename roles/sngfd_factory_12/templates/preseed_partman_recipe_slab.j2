@@ -1,0 +1,78 @@
+{% include 'header.j2' %}
+
+# Expert recipe. Very tasty.
+d-i partman-auto/choose_recipe select sng_slab{{ item.raid }}_recipe
+
+# The recipe itself. Probably where the spice nomenclature was first pondered...
+d-i partman-auto/expert_recipe string			\
+sng_slab{{ item.raid }}_recipe ::				\
+	1 1 1 free					\
+		label{ sngnonefi }			\
+		$iflabel{ msdos }			\
+		$reusemethod{ }				\
+		method{ biosgrub }			\
+		format{ }				\
+	.						\
+	768 788 1024 free				\
+		label{ sngefi }				\
+		$iflabel{ gpt }				\
+		$reusemethod{ }				\
+		method{ efi }				\
+		format{ }				\
+	.						\
+{% if item.raid == "raid" %}
+	768 788 1024 raid				\
+		method{ raid }				\
+{% else %}
+	768 788 1024 ext4				\
+		method{ format }			\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ /boot }			\
+		options/discard{ discard }		\
+{% endif %}
+		label{ sngboot }			\
+		format{ }				\
+	.						\
+{% if item.spice == "int" %}
+	10 10240 {{ int_mb_ssd_wear }} free				\
+{% else %}
+	10 500 {{ int_mb_ssd_wear }} free				\
+{% endif %}
+		label{ sngssdwear }			\
+		method{ keep }				\
+		options/discard{ discard }		\
+{% if item.raid == "raid" %}
+	.						\
+	3500 9999 -1 raid				\
+		label{ sngraid }			\
+		method{ raid }				\
+		format{ }				\
+{% else %}
+		$iflabel{ gpt }				\
+{% endif %}
+	.						\
+	{{ item.swapmin }} 777 {{ item.swapmax }} linux-swap		\
+		label{ sngswap }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvswap }			\
+		method{ swap }				\
+		format{ }				\
+	.						\
+	3500 9999 -1 ext4				\
+		label{ sngroot }			\
+		$defaultignore{ }			\
+		$lvmok{ }				\
+		lv_name{ lvroot }			\
+		method{ format }			\
+		format{ }				\
+		use_filesystem{ }			\
+		filesystem{ ext4 }			\
+		mountpoint{ / }				\
+		options/discard{ discard }		\
+	.
+
+{% if item.raid == "nonraid" %}
+d-i partman-auto/method string lvm
+{% endif %}
